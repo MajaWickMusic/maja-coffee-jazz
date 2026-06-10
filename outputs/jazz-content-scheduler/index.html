@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jazz Content Scheduler</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="mark">JZ</div>
+        <div>
+          <h1>Jazz Scheduler</h1>
+          <p>Catalog rotation for Reels, Stories, and posts</p>
+        </div>
+      </div>
+      <nav>
+        <a href="#posting">Generate</a>
+        <a href="#review">Review</a>
+        <a href="#publishingQueue">Publish Queue</a>
+        <a href="#settingsSetup">Settings & Setup</a>
+      </nav>
+      <div class="status">
+        <span class="dot"></span>
+        Publishing is controlled from the queue
+      </div>
+    </aside>
+
+    <main>
+      <section class="hero view-section view-overview">
+        <div>
+          <p class="eyebrow">Background Coffee Jazz Artist</p>
+          <h2>Daily content from a 500+ track catalog, without obvious repeats.</h2>
+        </div>
+        <div class="summary-grid">
+          <div>
+            <strong id="trackCount">0</strong>
+            <span>tracks loaded</span>
+          </div>
+          <div>
+            <strong id="albumCount">0</strong>
+            <span>albums mapped</span>
+          </div>
+          <div>
+            <strong id="queueCount">0</strong>
+            <span>draft posts</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="settingsSetup" class="band settings-hub view-section" data-view="settingsSetup">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Settings & Setup</p>
+            <h3>Account setup and catalog</h3>
+          </div>
+        </div>
+        <div class="settings-link-grid">
+          <a href="#instagramSetup">
+            <strong>Instagram Setup</strong>
+            <span>Check Meta/API readiness and account connection details.</span>
+          </a>
+          <a href="#library">
+            <strong>Library</strong>
+            <span>Import or update the catalog only when your source data changes.</span>
+          </a>
+        </div>
+        <details class="archive-panel">
+          <summary>Archived setup tools</summary>
+          <div class="archive-grid">
+            <a href="#rules">
+              <strong>Rotation</strong>
+              <span>Old draft-plan rules. Batch generation now lives in Generate.</span>
+            </a>
+            <a href="#schedule">
+              <strong>Schedule Rules</strong>
+              <span>Older timer controls. Scheduling now lives in Publish Queue.</span>
+            </a>
+            <a href="#queue">
+              <strong>Draft Queue</strong>
+              <span>Legacy draft-plan output from before rendered review batches.</span>
+            </a>
+            <a href="#connectors">
+              <strong>Stores</strong>
+              <span>Early notes for Spotify, YouTube, SoundCloud, and distributor data.</span>
+            </a>
+          </div>
+        </details>
+      </section>
+
+      <section id="library" class="band view-section" data-view="library">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Library</p>
+            <h3>Import tracks</h3>
+          </div>
+          <button id="loadSample" class="secondary">Load sample catalog</button>
+        </div>
+        <div class="split">
+          <div class="panel">
+            <label for="fileInput">Import a CSV file</label>
+            <input id="fileInput" type="file" accept=".csv,text/csv" />
+            <label for="catalogInput">Paste CSV-style rows</label>
+            <textarea id="catalogInput" spellcheck="false" placeholder="Title,Artist,Album,Artwork URL,Audio file or URL,Store URL,Mood,BPM,ISRC"></textarea>
+            <div class="button-row">
+              <button id="importCatalog">Import catalog</button>
+              <button id="clearCatalog" class="ghost">Clear</button>
+            </div>
+          </div>
+          <div class="panel compact">
+            <h4>Expected fields</h4>
+            <p>Use one track per line, or choose a distributor CSV. Artwork should be the album cover. Audio should be your master/audio file or a URL that the future renderer can download.</p>
+            <p class="note">Spotify, YouTube, and SoundCloud can help discover metadata, but full reliable audio usually needs your own files, distributor export, or approved store/API access.</p>
+          </div>
+        </div>
+        <div id="trackTable" class="table-wrap"></div>
+      </section>
+
+      <section id="rules" class="band view-section" data-view="rules">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Rotation</p>
+            <h3>Random rules</h3>
+          </div>
+          <button id="generateQueue">Generate next drafts</button>
+        </div>
+        <div class="controls-grid">
+          <label>
+            Cooldown days
+            <input id="cooldownDays" type="number" min="0" value="90" />
+          </label>
+          <label>
+            Drafts to generate
+            <input id="draftCount" type="number" min="1" max="60" value="14" />
+          </label>
+          <label>
+            Bias
+            <select id="biasMode">
+              <option value="fresh">Prioritize unused tracks</option>
+              <option value="new">Favor newest imports</option>
+              <option value="mood">Balance moods</option>
+              <option value="random">Pure random</option>
+            </select>
+          </label>
+          <label>
+            Repeat album limit
+            <input id="albumLimit" type="number" min="1" value="2" />
+          </label>
+        </div>
+      </section>
+
+      <section id="schedule" class="band view-section" data-view="schedule">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Timers</p>
+            <h3>Separate posting schedules</h3>
+          </div>
+        </div>
+        <div class="schedule-grid">
+          <article class="schedule-card">
+            <h4>Reels</h4>
+            <label>Every <input id="reelsEvery" type="number" min="1" value="1" /> days</label>
+            <label>Time <input id="reelsTime" type="time" value="18:30" /></label>
+            <label class="check"><input id="reelsEnabled" type="checkbox" checked /> Enabled</label>
+          </article>
+          <article class="schedule-card">
+            <h4>Stories</h4>
+            <label>Every <input id="storiesEvery" type="number" min="1" value="3" /> days</label>
+            <label>Time <input id="storiesTime" type="time" value="12:00" /></label>
+            <label class="check"><input id="storiesEnabled" type="checkbox" checked /> Enabled</label>
+          </article>
+          <article class="schedule-card">
+            <h4>Image/Text Posts</h4>
+            <label>Every <input id="postsEvery" type="number" min="1" value="7" /> days</label>
+            <label>Time <input id="postsTime" type="time" value="09:00" /></label>
+            <label class="check"><input id="postsEnabled" type="checkbox" checked /> Enabled</label>
+          </article>
+        </div>
+      </section>
+
+      <section id="queue" class="band view-section" data-view="queue">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Draft Queue</p>
+            <h3>Next content plan</h3>
+          </div>
+          <button id="exportQueue" class="secondary">Export JSON</button>
+        </div>
+        <div id="queueList" class="queue-list"></div>
+      </section>
+
+      <section id="review" class="band view-section" data-view="review">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Review</p>
+            <h3>Rendered Reels</h3>
+          </div>
+        </div>
+        <div class="workflow-steps review-steps">
+          <article>
+            <span>1</span>
+            <h4>Load latest batch</h4>
+            <p>Bring in the newest rendered Reels automatically.</p>
+            <button id="loadLatestBatchFlow">Load latest batch</button>
+          </article>
+          <article>
+            <span>2</span>
+            <h4>Approve or reject</h4>
+            <p>Use the cards below to choose what should be scheduled.</p>
+          </article>
+          <article>
+            <span>3</span>
+            <h4>Send to queue</h4>
+            <p>Move approved Reels into the publishing timeline.</p>
+            <button id="sendApprovedToQueueFlow">Send approved</button>
+          </article>
+          <article>
+            <span>4</span>
+            <h4>Continue</h4>
+            <p>Open the Publish Queue to set dates and start publishing.</p>
+            <a href="#publishingQueue">Open Publish Queue</a>
+          </article>
+        </div>
+        <input id="manifestInput" class="hidden-input" type="file" accept=".csv,.json,text/csv,application/json" />
+        <p id="reviewStatus" class="note"></p>
+        <div class="review-toolbar">
+          <button class="filter active" data-review-filter="all">All</button>
+          <button class="filter" data-review-filter="draft">Draft</button>
+          <button class="filter" data-review-filter="approved">Approved</button>
+          <button class="filter" data-review-filter="rejected">Rejected</button>
+          <button class="filter" data-review-filter="posted">Posted</button>
+        </div>
+        <div id="reviewList" class="review-grid"></div>
+      </section>
+
+      <section id="posting" class="band view-section" data-view="posting">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Generate</p>
+            <h3>Create review-ready Reels</h3>
+          </div>
+        </div>
+        <div class="workflow-steps generate-steps">
+          <article>
+            <span>1</span>
+            <h4>Choose batch</h4>
+            <p>Set batch size, length, fade, and render speed below.</p>
+          </article>
+          <article>
+            <span>2</span>
+            <h4>Create Reels</h4>
+            <p>Render the next batch and load it into Review automatically.</p>
+            <button id="createReviewBatchFlow">Create review batch</button>
+          </article>
+          <article>
+            <span>3</span>
+            <h4>Review</h4>
+            <p>Move to Review once rendering finishes.</p>
+            <a href="#review">Open Review</a>
+          </article>
+        </div>
+        <div class="posting-grid">
+          <article class="settings-card wide priority-card">
+            <h4>Batch / content mix</h4>
+            <div class="mix-grid">
+              <label>Reels % <input id="mixReels" type="number" min="0" max="100" value="70" /></label>
+              <label>Stories % <input id="mixStories" type="number" min="0" max="100" value="20" /></label>
+              <label>Feed % <input id="mixFeed" type="number" min="0" max="100" value="10" /></label>
+              <label>Cooldown days <input id="postingCooldown" type="number" min="0" value="90" /></label>
+              <label>Batch size <input id="renderBatchSize" type="number" min="1" max="50" value="7" /></label>
+              <label>
+                Render preset
+                <select id="renderPreset">
+                  <option value="fast">Fast batch</option>
+                  <option value="balanced" selected>Balanced</option>
+                  <option value="high">High quality</option>
+                </select>
+              </label>
+              <label>Min seconds <input id="renderMinSeconds" type="number" min="5" max="180" value="20" /></label>
+              <label>Max seconds <input id="renderMaxSeconds" type="number" min="5" max="180" value="30" /></label>
+              <label>Fade seconds <input id="renderFadeSeconds" type="number" min="0" max="20" value="4" /></label>
+            </div>
+          </article>
+
+          <article class="settings-card wide">
+            <h4>Batch status</h4>
+            <p class="note">Progress and completion details appear here after you create a review batch.</p>
+            <p id="renderBatchStatus" class="note"></p>
+          </article>
+
+          <article class="settings-card">
+            <h4>Approval</h4>
+            <label>
+              Publishing mode
+              <select id="publishMode">
+                <option value="approval">Approval required</option>
+                <option value="auto-approved">Auto-post approved only</option>
+                <option value="manual">Manual export only</option>
+              </select>
+            </label>
+            <label class="check"><input id="requirePreview" type="checkbox" checked /> Require preview before posting</label>
+            <label class="check"><input id="skipFallbackAudio" type="checkbox" checked /> Avoid fallback audio matches</label>
+          </article>
+
+          <article class="settings-card">
+            <h4>Instagram</h4>
+            <label>
+              Account label
+              <input id="igAccount" type="text" placeholder="@majascoffeejazzzone" />
+            </label>
+            <label>
+              Default post type
+              <select id="defaultPostType">
+                <option value="reel">Reel</option>
+                <option value="story">Story</option>
+                <option value="feed">Feed post</option>
+              </select>
+            </label>
+            <label class="check"><input id="publishOriginalAudio" type="checkbox" checked /> Use baked-in original audio</label>
+          </article>
+
+          <article class="settings-card">
+            <h4>Caption</h4>
+            <label>
+              Caption style
+              <select id="captionStyle">
+                <option value="calm">Calm coffee jazz</option>
+                <option value="minimal">Minimal</option>
+                <option value="release">Release focused</option>
+                <option value="mood">Mood focused</option>
+              </select>
+            </label>
+            <label>
+              Hashtag set
+              <textarea id="hashtagSet" rows="4">#coffeejazz #jazzreels #backgroundjazz #coffeeshopmusic #instrumentaljazz</textarea>
+            </label>
+          </article>
+
+          <article class="settings-card">
+            <h4>Timing</h4>
+            <label>
+              Posting timezone
+              <input id="postingTimezone" type="text" value="Europe/London" />
+            </label>
+            <label>
+              Preferred window
+              <select id="postingWindow">
+                <option value="evening">Evening</option>
+                <option value="morning">Morning</option>
+                <option value="lunch">Lunch</option>
+                <option value="late">Late night</option>
+              </select>
+            </label>
+            <label>
+              Max posts per day
+              <input id="maxPostsPerDay" type="number" min="1" max="10" value="1" />
+            </label>
+          </article>
+
+        </div>
+      </section>
+
+      <section id="publishingQueue" class="band view-section" data-view="publishingQueue">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Publish Queue</p>
+            <h3>Schedule and publish approved Reels</h3>
+          </div>
+        </div>
+        <div class="workflow-steps">
+          <article>
+            <span>1</span>
+            <h4>Load approved</h4>
+            <p>Bring approved Reels from Review into this queue.</p>
+            <button id="loadApprovedFromReview">Load approved</button>
+          </article>
+          <article>
+            <span>2</span>
+            <h4>Set schedule</h4>
+            <p>Pick the dates and times for each Reel below.</p>
+          </article>
+          <article>
+            <span>3</span>
+            <h4>Upload videos</h4>
+            <p>Upload MP4s to R2 now. Scheduled publishing uses those uploaded files later.</p>
+            <button id="uploadApprovedToR2">Upload videos</button>
+          </article>
+          <article>
+            <span>4</span>
+            <h4>Run publisher</h4>
+            <p>At each scheduled time it creates the container and publishes.</p>
+            <button id="toggleAutoPublisher">Start auto publisher</button>
+            <button id="publishDueContainers" class="secondary">Publish due now</button>
+          </article>
+        </div>
+        <article class="settings-card wide command-card utility-panel">
+          <h4>Status</h4>
+          <p class="note">Queue results, upload progress, and publishing messages appear here.</p>
+          <div class="button-row tight">
+            <button id="clearPublishingQueue" class="ghost">Clear queue</button>
+          </div>
+          <input id="approvedInput" class="hidden-input" type="file" accept=".json,application/json" />
+          <p id="apiPublishStatus" class="note"></p>
+        </article>
+        <article id="finalPublisherPanel" class="final-publisher-panel">
+          <div>
+            <p class="eyebrow">Final Publishing</p>
+            <h4 id="finalPublishTitle">No committed publishing timeline yet</h4>
+            <p id="finalPublishDialogue">Load approved Reels, set their schedule, upload videos, then start the auto publisher.</p>
+          </div>
+          <div id="finalPublishStats" class="timeline-stats"></div>
+          <div id="publishTimelineList" class="timeline-wheel"></div>
+        </article>
+        <div id="publishingQueueList" class="publish-list"></div>
+      </section>
+
+      <section id="instagramSetup" class="band view-section" data-view="instagramSetup">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Instagram Setup</p>
+            <h3>Meta API readiness</h3>
+          </div>
+          <div class="button-row tight">
+            <button id="saveInstagramSetup">Save setup</button>
+            <button id="exportInstagramSetup" class="secondary">Export setup</button>
+          </div>
+        </div>
+
+        <div class="setup-status">
+          <article>
+            <strong id="setupReadyCount">0/0</strong>
+            <span>readiness checks complete</span>
+          </article>
+          <article>
+            <strong id="setupModeLabel">Manual</strong>
+            <span>publishing mode</span>
+          </article>
+          <article>
+            <strong id="approvalLabel">Required</strong>
+            <span>approval safety</span>
+          </article>
+        </div>
+
+        <div class="posting-grid">
+          <article class="settings-card">
+            <h4>Instagram</h4>
+            <label>
+              Handle
+              <input id="setupIgHandle" type="text" value="@majascoffeejazzzone" />
+            </label>
+            <label>
+              Account type
+              <select id="setupIgType">
+                <option value="creator">Creator</option>
+                <option value="business">Business</option>
+                <option value="personal">Personal</option>
+              </select>
+            </label>
+            <label class="check"><input id="setupIgProfessional" type="checkbox" checked /> Professional account</label>
+          </article>
+
+          <article class="settings-card">
+            <h4>Facebook Page</h4>
+            <label>
+              Page name
+              <input id="setupPageName" type="text" value="Maja's Coffee Jazz Zone" />
+            </label>
+            <label>
+              Page URL
+              <input id="setupPageUrl" type="url" value="https://www.facebook.com/profile.php?id=61590381973296&sk=about" />
+            </label>
+            <label class="check"><input id="setupPageLinked" type="checkbox" checked /> Linked to Instagram</label>
+          </article>
+
+          <article class="settings-card">
+            <h4>Meta App</h4>
+            <label>
+              App status
+              <select id="setupAppStatus">
+                <option value="not-created">Not created yet</option>
+                <option value="created">Created</option>
+                <option value="testing">Testing</option>
+                <option value="live">Live</option>
+              </select>
+            </label>
+            <label>
+              Meta App ID
+              <input id="setupAppId" type="text" placeholder="Add after creating app" />
+            </label>
+            <label class="check"><input id="setupBackendRequired" type="checkbox" checked /> Backend required for secrets</label>
+          </article>
+
+          <article class="settings-card">
+            <h4>Publishing Mode</h4>
+            <label>
+              First setup mode
+              <select id="setupPublishMode">
+                <option value="manual">Manual handoff only</option>
+                <option value="test">Test API mode</option>
+                <option value="live-later">Live publishing later</option>
+              </select>
+            </label>
+            <label class="check"><input id="setupRequireApproval" type="checkbox" checked /> Require approval before publishing</label>
+            <label class="check"><input id="setupNoSecretsInBrowser" type="checkbox" checked /> Never store secrets in browser</label>
+          </article>
+
+          <article class="settings-card wide">
+            <h4>Required permissions</h4>
+            <div class="checklist">
+              <label class="check"><input id="permInstagramBasic" type="checkbox" /> instagram_basic</label>
+              <label class="check"><input id="permInstagramPublish" type="checkbox" /> instagram_content_publish</label>
+              <label class="check"><input id="permPagesShow" type="checkbox" /> pages_show_list</label>
+              <label class="check"><input id="permPagesEngagement" type="checkbox" /> pages_read_engagement</label>
+            </div>
+          </article>
+
+          <article class="settings-card wide">
+            <h4>Next actions</h4>
+            <ol class="setup-list">
+              <li>Create a Meta Developer App.</li>
+              <li>Add Instagram Graph/API publishing capability.</li>
+              <li>Connect the Facebook Page and Instagram Creator account.</li>
+              <li>Request or test required permissions.</li>
+              <li>Build backend token storage before adding real tokens.</li>
+            </ol>
+          </article>
+
+          <article class="settings-card wide">
+            <h4>Backend environment placeholders</h4>
+            <pre id="setupEnvPreview"></pre>
+          </article>
+        </div>
+      </section>
+
+      <section id="connectors" class="band view-section" data-view="connectors">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Stores</p>
+            <h3>Data sources to connect later</h3>
+          </div>
+        </div>
+        <div class="connector-grid">
+          <article>
+            <h4>Distributor export</h4>
+            <p>Best first source for all 500+ tracks because it can include ISRC, release metadata, artwork, and store availability.</p>
+          </article>
+          <article>
+            <h4>Spotify</h4>
+            <p>Good for metadata, album art, previews, popularity, and release mapping. Full audio is not available from the normal public API.</p>
+          </article>
+          <article>
+            <h4>YouTube</h4>
+            <p>Useful for matching official videos or topic uploads. Audio extraction should be avoided unless you have a permitted source workflow.</p>
+          </article>
+          <article>
+            <h4>SoundCloud</h4>
+            <p>Can work if your account/app has API access or export data. Availability depends on SoundCloud access permissions.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <template id="queueTemplate">
+      <article class="queue-item">
+        <div class="art"></div>
+        <div>
+          <div class="meta-row">
+            <span class="type"></span>
+            <span class="date"></span>
+          </div>
+          <h4></h4>
+          <p></p>
+          <small></small>
+        </div>
+      </article>
+    </template>
+
+    <template id="reviewTemplate">
+      <article class="review-card">
+        <div class="review-preview"></div>
+        <div class="review-body">
+          <div class="meta-row">
+            <span class="status-pill"></span>
+            <span class="template-pill"></span>
+          </div>
+          <h4></h4>
+          <p class="review-album"></p>
+          <label>
+            Caption
+            <textarea class="review-caption" rows="3"></textarea>
+          </label>
+          <label>
+            Hashtags
+            <textarea class="review-hashtags" rows="2"></textarea>
+          </label>
+          <div class="button-row">
+            <button class="approve">Approve</button>
+            <button class="reject ghost">Reject</button>
+            <button class="posted secondary">Mark posted</button>
+            <a class="open-video" target="_blank" rel="noreferrer">Open MP4</a>
+          </div>
+        </div>
+      </article>
+    </template>
+
+    <template id="publishTemplate">
+      <article class="publish-card">
+        <div class="publish-preview"></div>
+        <div class="publish-body">
+          <div class="meta-row">
+            <span class="status-pill publish-status"></span>
+            <span class="template-pill publish-platform"></span>
+          </div>
+          <h4></h4>
+          <p class="review-album"></p>
+          <div class="publish-fields">
+            <label>
+              Platform
+              <select class="publish-platform-input">
+                <option value="instagram-reel">Instagram Reel</option>
+                <option value="instagram-story">Instagram Story</option>
+                <option value="instagram-feed">Instagram Feed</option>
+              </select>
+            </label>
+            <label>
+              Scheduled
+              <input class="publish-scheduled" type="datetime-local" />
+            </label>
+            <label>
+              Status
+              <select class="publish-status-input">
+                <option value="ready">Ready</option>
+                <option value="scheduled">Scheduled</option>
+                <option value="posted">Posted</option>
+                <option value="held">Held</option>
+              </select>
+            </label>
+          </div>
+          <label>
+            Caption
+            <textarea class="publish-caption" rows="3"></textarea>
+          </label>
+          <label>
+            Hashtags
+            <textarea class="publish-hashtags" rows="2"></textarea>
+          </label>
+          <label>
+            Public MP4 URL
+            <input class="publish-public-url" type="url" placeholder="https://..." />
+          </label>
+          <p class="note publish-api-result"></p>
+          <div class="button-row">
+            <button class="mark-ready">Ready</button>
+            <button class="mark-scheduled secondary">Scheduled</button>
+            <button class="prepare-instagram secondary">Check Instagram API</button>
+            <button class="mark-held ghost">Hold</button>
+            <a class="open-video" target="_blank" rel="noreferrer">Open MP4</a>
+          </div>
+        </div>
+      </article>
+    </template>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,32 @@
+# Local secrets
+.env
+*.env
+!*.env.example
+outputs/jazz-content-scheduler/backend/.env
+outputs/jazz-content-scheduler/backend/config/*.json
+
+# Generated media and render outputs
+outputs/jazz-content-scheduler/rendered-reels/
+outputs/jazz-content-scheduler/manual-posting-packages/
+outputs/jazz-content-scheduler/manual-posting-test/
+outputs/jazz-content-scheduler/api-runs/
+outputs/jazz-content-scheduler/instagram-container-runs/
+outputs/jazz-content-scheduler/queue-runs/
+outputs/jazz-content-scheduler/render-history.csv
+outputs/jazz-content-scheduler/*.mp4
+outputs/jazz-content-scheduler/*.mov
+outputs/jazz-content-scheduler/*.mkv
+outputs/jazz-content-scheduler/*.wav
+outputs/jazz-content-scheduler/*.mp3
+
+# Local catalog exports that may contain private paths or release data
+outputs/jazz-content-scheduler/*full-catalog*.csv
+outputs/jazz-content-scheduler/*with-files*.csv
+outputs/jazz-content-scheduler/*local-artwork-map*.csv
+outputs/jazz-content-scheduler/*missing*.csv
+
+# Dependencies and caches
+node_modules/
+.cache/
+.DS_Store
+Thumbs.db

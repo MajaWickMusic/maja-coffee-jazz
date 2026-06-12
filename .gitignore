@@ -4,6 +4,7 @@
 !*.env.example
 outputs/jazz-content-scheduler/backend/.env
 outputs/jazz-content-scheduler/backend/config/*.json
+!outputs/jazz-content-scheduler/backend/config/instagram-setup-config.json
 
 # Generated media and render outputs
 outputs/jazz-content-scheduler/rendered-reels/

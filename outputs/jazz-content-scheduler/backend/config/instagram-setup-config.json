@@ -1,0 +1,20 @@
+{
+  "igHandle": "@majascoffeejazzzone",
+  "igType": "creator",
+  "igProfessional": true,
+  "pageName": "Maja's Coffee Jazz Zone",
+  "pageUrl": "https://www.facebook.com/profile.php?id=61590381973296&sk=about",
+  "pageLinked": true,
+  "appStatus": "created",
+  "appId": "1365265765442781",
+  "backendRequired": true,
+  "publishMode": "manual",
+  "requireApproval": true,
+  "noSecretsInBrowser": true,
+  "permissions": {
+    "instagramBasic": false,
+    "instagramPublish": false,
+    "pagesShow": false,
+    "pagesEngagement": false
+  }
+}

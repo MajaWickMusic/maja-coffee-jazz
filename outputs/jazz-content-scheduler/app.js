@@ -48,7 +48,7 @@ function parseCatalog(input) {
   const rows = parseCsv(input).filter((row) => row.some(Boolean));
   if (!rows.length) return [];
 
-  const firstRow = rows[0].map((cell) => cell.toLowerCase());
+  const firstRow = rows[0].map(normalizeHeader);
   const hasHeader =
     firstRow.includes("title") ||
     firstRow.includes("track title") ||
@@ -96,9 +96,13 @@ function parseCsv(input) {
   return rows;
 }
 
+function normalizeHeader(header) {
+  return String(header || "").trim().replace(/^\uFEFF/, "").toLowerCase();
+}
+
 function fromHeaderRow(headers, row, index) {
   const values = headers.reduce((record, header, headerIndex) => {
-    record[header.trim().toLowerCase()] = row[headerIndex] || "";
+    record[normalizeHeader(header)] = row[headerIndex] || "";
     return record;
   }, {});
 

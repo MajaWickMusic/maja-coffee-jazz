@@ -10,8 +10,28 @@ const rootDir = dirname(fileURLToPath(import.meta.url));
 const schedulerDir = resolve(rootDir, "..");
 const workspaceRoot = resolve(schedulerDir, "..", "..");
 const runDir = join(schedulerDir, "api-runs");
+const DEFAULT_SETUP = {
+  igHandle: "@majascoffeejazzzone",
+  igType: "creator",
+  igProfessional: true,
+  pageName: "Maja's Coffee Jazz Zone",
+  pageUrl: "https://www.facebook.com/profile.php?id=61590381973296&sk=about",
+  pageLinked: true,
+  appStatus: "created",
+  appId: "1365265765442781",
+  backendRequired: true,
+  publishMode: "manual",
+  requireApproval: true,
+  noSecretsInBrowser: true,
+  permissions: {
+    instagramBasic: false,
+    instagramPublish: false,
+    pagesShow: false,
+    pagesEngagement: false
+  }
+};
 const env = await loadEnv(join(rootDir, ".env"));
-const setup = await loadJson(join(rootDir, "config", "instagram-setup-config.json"));
+const setup = await loadSetup(join(rootDir, "config", "instagram-setup-config.json"));
 const execFileAsync = promisify(execFile);
 
 const PORT = Number(env.PORT || 8787);
@@ -19,26 +39,10 @@ const GRAPH_VERSION = env.META_GRAPH_VERSION || "v23.0";
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_VERSION}`;
 const LIVE_MODES = new Set(["test", "live", "auto-approved"]);
 
-if (process.argv.includes("--check-readiness")) {
-  console.log(JSON.stringify(await readiness(), null, 2));
-  process.exit(0);
-}
-
-if (process.argv.includes("--smoke-publish")) {
-  console.log(JSON.stringify(await prepareInstagramReel({
-    id: "smoke-test",
-    status: "ready",
-    title: "Smoke Test",
-    caption: "Test caption",
-    hashtags: "#test",
-    publicVideoUrl: ""
-  }), null, 2));
-  process.exit(0);
-}
-
 const server = createServer(async (request, response) => {
   try {
     const url = new URL(request.url, `http://${request.headers.host}`);
+    applyCors(response, request);
 
     if (request.method === "OPTIONS") {
       return options(response);
@@ -48,7 +52,7 @@ const server = createServer(async (request, response) => {
       return json(response, 200, {
         ok: true,
         service: "jazz-scheduler-backend",
-        publishingEnabled: false
+        publishingEnabled: publishingGate(env).ok
       });
     }
 
@@ -106,11 +110,7 @@ const server = createServer(async (request, response) => {
   }
 });
 
-server.listen(PORT, "127.0.0.1", () => {
-  console.log(`Jazz Scheduler backend listening on http://127.0.0.1:${PORT}`);
-});
-
-async function readiness() {
+export async function readiness() {
   const checks = [
     check("instagram_account_type", setup.igType === "creator" || setup.igType === "business", `Instagram is ${setup.igType}`),
     check("facebook_page_linked", Boolean(setup.pageLinked), setup.pageName),
@@ -289,11 +289,14 @@ async function createInstagramContainers(payload = {}) {
   };
 }
 
-async function publishDueContainers(payload = {}) {
+export async function publishDueContainers(payload = {}, envValues = env) {
   const items = Array.isArray(payload.items) ? payload.items : [];
   if (!items.length) {
     return { ok: false, message: "No scheduled container items were sent." };
   }
+
+  const gate = publishingGate(envValues);
+  if (!gate.ok) return { ...gate, items };
 
   await mkdir(runDir, { recursive: true });
   const now = new Date();
@@ -472,7 +475,7 @@ async function readReviewManifestItems(batchFolder) {
   return Array.isArray(parsed) ? parsed : [parsed];
 }
 
-async function prepareInstagramReel(payload = {}) {
+export async function prepareInstagramReel(payload = {}) {
   const item = payload.item || payload;
   const publicVideoUrl = String(item.publicVideoUrl || item.videoUrl || "").trim();
   const caption = compactCaption(item.caption, item.hashtags);
@@ -548,6 +551,54 @@ function check(id, ok, detail = "") {
     ok: Boolean(ok),
     detail
   };
+}
+
+export function publishingGate(envValues = {}) {
+  const mode = envValues.PUBLISHING_MODE || "manual";
+  if (!LIVE_MODES.has(mode)) {
+    return {
+      ok: false,
+      dryRun: true,
+      mode,
+      message: "Publishing is disabled. Set PUBLISHING_MODE=test only when approved queue items should be allowed to publish."
+    };
+  }
+
+  if (envValues.REQUIRE_APPROVAL === "false") {
+    return {
+      ok: false,
+      dryRun: true,
+      mode,
+      message: "Publishing is blocked because the approval gate is disabled."
+    };
+  }
+
+  return {
+    ok: true,
+    dryRun: false,
+    mode,
+    message: "Publishing is enabled for approved queue items."
+  };
+}
+
+export function allowedCorsOrigin(origin = "") {
+  if (!origin || origin === "null") return "null";
+
+  try {
+    const url = new URL(origin);
+    const isLocalHost = url.hostname === "127.0.0.1" || url.hostname === "localhost";
+    const isHttp = url.protocol === "http:" || url.protocol === "https:";
+    if (isLocalHost && isHttp) return origin;
+  } catch {}
+
+  return "null";
+}
+
+function applyCors(response, request) {
+  response.setHeader("access-control-allow-origin", allowedCorsOrigin(request.headers.origin));
+  response.setHeader("access-control-allow-methods", "GET,POST,OPTIONS");
+  response.setHeader("access-control-allow-headers", "content-type");
+  response.setHeader("vary", "Origin");
 }
 
 async function graphCheck(id, path) {
@@ -699,6 +750,14 @@ async function loadJson(path) {
   return JSON.parse(await readFile(path, "utf8"));
 }
 
+export async function loadSetup(path) {
+  if (!existsSync(path)) return DEFAULT_SETUP;
+  return {
+    ...DEFAULT_SETUP,
+    ...(await loadJson(path))
+  };
+}
+
 async function loadEnv(path) {
   const values = {};
   if (!existsSync(path)) return values;
@@ -725,19 +784,39 @@ function unquote(value) {
 
 function json(response, status, payload) {
   response.writeHead(status, {
-    "content-type": "application/json; charset=utf-8",
-    "access-control-allow-origin": "null",
-    "access-control-allow-methods": "GET,POST,OPTIONS",
-    "access-control-allow-headers": "content-type"
+    "content-type": "application/json; charset=utf-8"
   });
   response.end(JSON.stringify(payload, null, 2));
 }
 
 function options(response) {
-  response.writeHead(204, {
-    "access-control-allow-origin": "null",
-    "access-control-allow-methods": "GET,POST,OPTIONS",
-    "access-control-allow-headers": "content-type"
-  });
+  response.writeHead(204);
   response.end();
+}
+
+async function main() {
+  if (process.argv.includes("--check-readiness")) {
+    console.log(JSON.stringify(await readiness(), null, 2));
+    return;
+  }
+
+  if (process.argv.includes("--smoke-publish")) {
+    console.log(JSON.stringify(await prepareInstagramReel({
+      id: "smoke-test",
+      status: "ready",
+      title: "Smoke Test",
+      caption: "Test caption",
+      hashtags: "#test",
+      publicVideoUrl: ""
+    }), null, 2));
+    return;
+  }
+
+  server.listen(PORT, "127.0.0.1", () => {
+    console.log(`Jazz Scheduler backend listening on http://127.0.0.1:${PORT}`);
+  });
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  await main();
 }

@@ -40,3 +40,13 @@ outputs/jazz-content-scheduler/backend/.env
 ```
 
 Then add your own Meta and Cloudflare R2 values locally. Do not commit `.env`.
+
+## Validation
+
+Run the dependency-free checks before changing the publishing flow:
+
+```powershell
+npm test
+npm run check:js
+node outputs/jazz-content-scheduler/backend/server.mjs --check-readiness
+```

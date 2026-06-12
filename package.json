@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "check:js": "node --check outputs/jazz-content-scheduler/app.js && node --check outputs/jazz-content-scheduler/backend/server.mjs && node --check outputs/jazz-content-scheduler/backend/upload-r2-reels.mjs && node --check outputs/jazz-content-scheduler/backend/create-instagram-containers.mjs",
+    "test": "node --test"
+  }
+}

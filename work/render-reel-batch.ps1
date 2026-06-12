@@ -250,6 +250,10 @@ foreach ($track in $selected) {
   if ($previewResult.TimedOut -or $previewResult.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $previewPath)) {
     $previewPath = ""
   }
+  $resolvedPreviewPath = ""
+  if ($previewPath) {
+    $resolvedPreviewPath = (Resolve-Path -LiteralPath $previewPath).Path
+  }
 
   $manifestRows.Add([pscustomobject]@{
     Status = "draft"
@@ -257,7 +261,7 @@ foreach ($track in $selected) {
     Album = $track.Album
     ISRC = $track.ISRC
     Video = (Resolve-Path -LiteralPath $videoPath).Path
-    Preview = (Resolve-Path -LiteralPath $previewPath).Path
+    Preview = $resolvedPreviewPath
     Audio = $track.'Audio file or URL'
     Artwork = $track.'Artwork URL'
     Template = $template

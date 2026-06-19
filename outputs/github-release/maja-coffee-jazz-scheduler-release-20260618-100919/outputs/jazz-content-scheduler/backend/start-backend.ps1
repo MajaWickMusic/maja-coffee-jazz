@@ -3,9 +3,8 @@ $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 $nodeCandidates = @(
-  $env:JAZZ_SCHEDULER_NODE,
-  "node",
-  (Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe")
+  "C:\Users\willi\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe",
+  "node"
 )
 
 $node = $null
@@ -18,7 +17,7 @@ foreach ($candidate in $nodeCandidates) {
 }
 
 if (-not $node) {
-  throw "Node.js was not found. Install Node.js from https://nodejs.org, then reopen Jazz Scheduler."
+  throw "Node.js was not found."
 }
 
 Push-Location $scriptDir

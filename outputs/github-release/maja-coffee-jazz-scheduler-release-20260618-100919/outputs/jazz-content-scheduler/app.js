@@ -158,7 +158,7 @@ function parseCatalog(input) {
   const rows = parseCsv(input).filter((row) => row.some(Boolean));
   if (!rows.length) return [];
 
-  const firstRow = rows[0].map(normalizeHeader);
+  const firstRow = rows[0].map((cell) => cell.toLowerCase());
   const hasHeader =
     firstRow.includes("title") ||
     firstRow.includes("track title") ||
@@ -206,13 +206,9 @@ function parseCsv(input) {
   return rows;
 }
 
-function normalizeHeader(header) {
-  return String(header || "").trim().replace(/^\uFEFF/, "").toLowerCase();
-}
-
 function fromHeaderRow(headers, row, index) {
   const values = headers.reduce((record, header, headerIndex) => {
-    record[normalizeHeader(header)] = row[headerIndex] || "";
+    record[header.trim().toLowerCase()] = row[headerIndex] || "";
     return record;
   }, {});
 
@@ -275,28 +271,25 @@ function renderDashboard() {
   setText("#dashboardReadyCount", ready.length);
   setText("#dashboardDaysScheduled", days.size);
   setText("#dashboardTokenState", tokenSummary.label);
-  setText("#dashboardMetaStatus", tokenSummary.status === "good" ? "Healthy" : tokenSummary.status === "soon" ? "Refresh soon" : tokenSummary.status === "bad" ? "Needs attention" : "Check needed");
-  const lastScan = state.setupWizard?.lastScan;
-  setText("#dashboardLibraryStatus", lastScan ? `${lastScan.eligibleCount || 0} ready` : state.tracks.length ? `${state.tracks.length} tracks` : "Not scanned");
   setText("#dashboardNextReel", next ? next.title || "Untitled Reel" : "No Reel scheduled");
   setText("#dashboardNextTime", next ? `${formatSchedule(next.scheduledFor)} | ${next.publicVideoUrl ? "video uploaded" : "needs upload"}` : "Build a batch and upload it to start the plan.");
   setText("#dashboardLastPost", last ? last.title || "Untitled Reel" : "No local history yet");
   setText("#dashboardLastPostTime", last ? formatSchedule(last.instagramPublishedAt || last.facebookPublishedAt || last.lastSeenAt) : "Published posts from this scheduler appear here.");
   setText("#dashboardNextStep", nextStep.title);
   setText("#dashboardNextStepText", nextStep.text);
-  setText("#dashboardHeadline", next ? `${next.title} is next in the publishing plan.` : "Today's publishing status.");
+  setText("#dashboardHeadline", next ? `${next.title} is next in the publishing plan.` : "Daily coffee jazz publishing at a glance.");
   setText("#dashboardSubline", nextStep.text);
 }
 
 function dashboardNextStep({ pending, ready, next, tokenSummary }) {
   if (tokenSummary.status === "bad") {
-    return { title: "Fix Meta token", text: "Open Setup and refresh the Meta token before publishing." };
+    return { title: "Fix Meta token", text: "Open Settings & Setup and refresh the Meta token before publishing." };
   }
   if (tokenSummary.status === "soon") {
     return { title: "Refresh token soon", text: "Meta token is valid, but it is close to expiry. Refresh before it blocks publishing." };
   }
   if (!state.tracks.length) {
-    return { title: "Scan library", text: "Open Setup, choose the audio/artwork folders, then scan." };
+    return { title: "Scan library", text: "Open Settings & Setup, choose the audio/artwork folders, then scan." };
   }
   if (!state.reviews.length && !state.publishingQueue.length && !state.postingPlan.length) {
     return { title: "Generate review batch", text: "Create fresh Reel drafts, then approve the best ones in Review." };
@@ -803,9 +796,7 @@ function renderPublishingQueue() {
   list.innerHTML = "";
 
   if (!state.publishingQueue.length) {
-    list.innerHTML = state.postingPlan.length
-      ? `<p class="note">No active queue. Your uploaded scheduled Reels are saved in History and shown in the saved plan preview above. Load approved Reels here only when you are preparing a new batch.</p>`
-      : `<p class="note">No approved Reels loaded yet. Go to Review, approve the Reels you like, then use Load approved here.</p>`;
+    list.innerHTML = `<p class="note">No approved Reels loaded yet. Go to Review, approve the Reels you like, then use Load approved here.</p>`;
     renderPublishTimeline();
     renderMetaQueueSummary();
     return;
@@ -889,18 +880,11 @@ function renderPublishTimeline() {
   const list = $("#publishTimelineList");
   if (!panel || !title || !dialogue || !stats || !list) return;
 
-  const activeItems = [...state.publishingQueue].sort((a, b) => {
+  const items = [...state.publishingQueue].sort((a, b) => {
     const first = new Date(a.scheduledFor || 0).getTime();
     const second = new Date(b.scheduledFor || 0).getTime();
     return first - second;
   });
-  const savedPlanItems = [...state.postingPlan].sort((a, b) => {
-    const first = new Date(a.scheduledFor || 0).getTime();
-    const second = new Date(b.scheduledFor || 0).getTime();
-    return first - second;
-  });
-  const items = activeItems.length ? activeItems : savedPlanItems;
-  const showingSavedPlan = !activeItems.length && savedPlanItems.length;
   const uploaded = items.filter((item) => item.publicVideoUrl).length;
   const scheduled = items.filter((item) => item.status === "scheduled" || item.scheduledFor).length;
   const posted = items.filter((item) => item.status === "posted" || item.publishStatus === "published").length;
@@ -909,7 +893,7 @@ function renderPublishTimeline() {
   const nextItem = items.find((item) => item.status !== "posted" && item.status !== "held");
 
   stats.innerHTML = [
-    [showingSavedPlan ? "Saved plan" : "Queued", items.length],
+    ["Queued", items.length],
     ["Videos uploaded", uploaded],
     ["Publish-ready", readyToPublish],
     ["Posted", posted]
@@ -923,20 +907,9 @@ function renderPublishTimeline() {
     return;
   }
 
-  if (showingSavedPlan) {
-    panel.classList.remove("committed");
-    title.textContent = "Active queue empty; saved plan is ready";
-    dialogue.textContent = nextItem
-      ? `Your current scheduled Reels are saved in History. Next up is ${nextItem.title} on ${formatSchedule(nextItem.scheduledFor)}. Use Publish due now or the startup publisher when it is due.`
-      : "Your saved plan is complete. Create a new batch when you want more Reels.";
-  } else {
-    panel.classList.toggle("committed", Boolean(autoPublisherTimer));
-  }
-
+  panel.classList.toggle("committed", Boolean(autoPublisherTimer));
   const missingUploads = items.length - uploaded;
-  if (showingSavedPlan) {
-    // Saved-plan copy is set above; keep rendering the timeline below.
-  } else if (autoPublisherTimer) {
+  if (autoPublisherTimer) {
     title.textContent = "Auto publisher is running";
     dialogue.textContent = nextItem
       ? `Next up: ${nextItem.title} on ${formatSchedule(nextItem.scheduledFor)}. The video is already uploaded; Meta publish happens at the scheduled time. Keep the backend and this dashboard open.`
@@ -972,18 +945,11 @@ function renderMetaQueueSummary() {
   const list = $("#metaQueueList");
   if (!label || !stats || !list) return;
 
-  const activeItems = [...state.publishingQueue].sort((a, b) => {
+  const items = [...state.publishingQueue].sort((a, b) => {
     const first = new Date(a.scheduledFor || 0).getTime();
     const second = new Date(b.scheduledFor || 0).getTime();
     return first - second;
   });
-  const savedPlanItems = [...state.postingPlan].sort((a, b) => {
-    const first = new Date(a.scheduledFor || 0).getTime();
-    const second = new Date(b.scheduledFor || 0).getTime();
-    return first - second;
-  });
-  const items = activeItems.length ? activeItems : savedPlanItems;
-  const showingSavedPlan = !activeItems.length && savedPlanItems.length;
   const uploaded = items.filter((item) => Boolean(item.publicVideoUrl));
   const posted = items.filter((item) => item.status === "posted" || item.publishStatus === "published");
   const metaReady = items.filter((item) => item.publicVideoUrl && item.status !== "held" && item.status !== "posted" && item.publishStatus !== "published");
@@ -995,7 +961,7 @@ function renderMetaQueueSummary() {
     ? dueNow.length
       ? `${dueNow.length} due now`
       : `${metaReady.length} uploaded and waiting`
-    : items.length ? showingSavedPlan ? "Saved plan in History" : "Nothing ready for Meta yet" : "No queue loaded";
+    : items.length ? "Nothing ready for Meta yet" : "No queue loaded";
 
   stats.innerHTML = [
     ["Needs upload", needsUpload.length],
@@ -1009,11 +975,7 @@ function renderMetaQueueSummary() {
     return;
   }
 
-  const savedPlanNote = showingSavedPlan
-    ? `<p class="note">The active queue is empty because these Reels have already been uploaded and moved into History. They can still be published from the saved plan.</p>`
-    : "";
-
-  list.innerHTML = savedPlanNote + items.slice(0, 12).map((item, index) => {
+  list.innerHTML = items.slice(0, 12).map((item, index) => {
     const isPosted = item.status === "posted" || item.publishStatus === "published";
     const isHeld = item.status === "held";
     const isDue = dueNow.some((dueItem) => dueItem.id === item.id);
@@ -1066,7 +1028,7 @@ function renderPostingPlan() {
   ].map(([label, value]) => `<div><strong>${value}</strong><span>${label}</span></div>`).join("");
 
   if (!items.length) {
-    list.innerHTML = `<p class="note">Uploaded Reels will appear here after the Schedule upload step completes.</p>`;
+    list.innerHTML = `<p class="note">Uploaded Reels will appear here after the Publish Queue upload step completes.</p>`;
     return;
   }
 
@@ -1632,7 +1594,7 @@ async function checkFirstRunMeta() {
   await loadTokenHealth();
   renderFirstRunWizard();
   const tokenSummary = summarizeTokenHealth();
-  setStatus("#wizardStatus", tokenSummary.status === "bad" ? "Meta needs attention. Check Setup for details." : "Meta connection looks ready.");
+  setStatus("#wizardStatus", tokenSummary.status === "bad" ? "Meta needs attention. Check Settings & Setup for details." : "Meta connection looks ready.");
 }
 
 async function installFirstRunStartupPublisher() {
@@ -2385,7 +2347,7 @@ async function syncLatestUploadedPackage() {
     state.publishingQueue = [];
     save();
     renderPublishingQueue();
-    setStatus("#apiPublishStatus", `${result.message || "Latest upload results loaded."} Saved in History and cleared from the active queue.`);
+    setStatus("#apiPublishStatus", `${result.message || "Latest upload results loaded."} Saved in Posting Plan and cleared from the active queue.`);
   } catch (error) {
     setStatus("#apiPublishStatus", "Could not load latest upload results. Make sure the backend is running.");
   }
@@ -2413,7 +2375,7 @@ async function pollUploadStatus() {
         state.publishingQueue = [];
         save();
         renderPublishingQueue();
-        setStatus("#apiPublishStatus", `${status.result.message || "Upload complete."} The active queue has been cleared and the schedule is saved in History.`);
+        setStatus("#apiPublishStatus", `${status.result.message || "Upload complete."} The active queue has been cleared and the schedule is saved in Posting Plan.`);
       } else if (status.cancelled) {
         setStatus("#apiPublishStatus", "Upload stopped. You can restart it when ready.");
       } else if (status.error) {

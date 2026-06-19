@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Jazz Content Scheduler</title>
-    <link rel="stylesheet" href="./styles.css?v=20260618-pro1" />
+    <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <aside class="sidebar">
@@ -17,15 +17,15 @@
       </div>
       <nav>
         <a href="#dashboard">Dashboard</a>
-        <a href="#settingsSetup">Setup</a>
         <a href="#posting">Generate</a>
         <a href="#review">Review</a>
-        <a href="#publishingQueue">Schedule</a>
-        <a href="#postingPlan">History</a>
+        <a href="#publishingQueue">Publish Queue</a>
+        <a href="#postingPlan">Posting Plan</a>
+        <a href="#settingsSetup">Settings & Setup</a>
       </nav>
       <div class="status">
         <span class="dot"></span>
-        Daily publishing control room
+        Publishing is controlled from the queue
       </div>
     </aside>
 
@@ -105,29 +105,17 @@
       </section>
 
       <section id="dashboard" class="hero dashboard-hero view-section" data-view="dashboard">
-        <div class="dashboard-primary">
-          <p class="eyebrow">Today</p>
-          <h2 id="dashboardHeadline">Today's publishing status.</h2>
-          <p id="dashboardSubline">Open the app, check what matters, and take the next action.</p>
+        <div>
+          <p class="eyebrow">Content Control Room</p>
+          <h2 id="dashboardHeadline">Daily coffee jazz publishing at a glance.</h2>
+          <p id="dashboardSubline">Checking your local plan, token health, and next Reel.</p>
           <div class="button-row dashboard-actions">
-            <button id="dashboardDoToday">Run today's check</button>
-            <a href="#posting">Create drafts</a>
-            <a href="#publishingQueue">Open schedule</a>
+            <button id="dashboardDoToday">Do today’s check</button>
+            <a href="#posting">Generate drafts</a>
+            <a href="#postingPlan">View posting plan</a>
           </div>
         </div>
-        <div class="dashboard-status-stack">
-          <article>
-            <span>Next Scheduled Reel</span>
-            <strong id="dashboardNextReel">No Reel scheduled</strong>
-            <small id="dashboardNextTime">Build a batch and upload it to start the plan.</small>
-          </article>
-          <article>
-            <span>Action Needed</span>
-            <strong id="dashboardNextStep">Open Generate</strong>
-            <small id="dashboardNextStepText">The app will guide you through the next useful action.</small>
-          </article>
-        </div>
-        <div class="summary-grid dashboard-summary dashboard-command-grid">
+        <div class="summary-grid dashboard-summary">
           <div>
             <strong id="trackCount">0</strong>
             <span>tracks loaded</span>
@@ -153,11 +141,11 @@
             <span>Meta token</span>
           </div>
         </div>
-        <div class="dashboard-grid dashboard-secondary-grid">
+        <div class="dashboard-grid">
           <article>
-            <span>Publishing Health</span>
-            <strong id="dashboardMetaStatus">Check Meta</strong>
-            <small>Use Setup if the token or permissions need attention.</small>
+            <span>Next Reel</span>
+            <strong id="dashboardNextReel">No Reel scheduled</strong>
+            <small id="dashboardNextTime">Build a batch and upload it to start the plan.</small>
           </article>
           <article>
             <span>Last Published</span>
@@ -165,9 +153,9 @@
             <small id="dashboardLastPostTime">Published posts from this scheduler appear here.</small>
           </article>
           <article>
-            <span>Library</span>
-            <strong id="dashboardLibraryStatus">Not scanned</strong>
-            <small>Setup checks missing artwork, duplicates, and unsupported files.</small>
+            <span>Suggested Next Step</span>
+            <strong id="dashboardNextStep">Open Generate</strong>
+            <small id="dashboardNextStepText">The app will guide you through the next useful action.</small>
           </article>
         </div>
       </section>
@@ -175,21 +163,15 @@
       <section id="settingsSetup" class="band settings-hub view-section" data-view="settingsSetup">
         <div class="section-head">
           <div>
-            <p class="eyebrow">Setup</p>
-            <h3>Guided setup checklist</h3>
+            <p class="eyebrow">Settings & Setup</p>
+            <h3>Account setup and catalog</h3>
           </div>
           <button id="restartFirstRunSetup" class="secondary">Run setup wizard</button>
         </div>
-        <div class="setup-tabs">
-          <a href="#settingsSetup">Library</a>
-          <a href="#instagramSetup">Meta</a>
-          <a href="#settingsSetup">Automation</a>
-          <a href="#settingsSetup">Advanced</a>
-        </div>
         <div class="setup-wizard">
           <div>
-            <p class="eyebrow">Library</p>
-            <h4>Connect the local music library</h4>
+            <p class="eyebrow">First-time setup</p>
+            <h4>Build this app around any artist library</h4>
             <p>Choose where the audio and artwork live, scan the folders, then connect publishing accounts. The scan saves a renderer-ready catalog automatically.</p>
           </div>
           <div class="setup-wizard-grid">
@@ -251,9 +233,9 @@
             <strong>Instagram Setup</strong>
             <span>Check Meta/API readiness and account connection details.</span>
           </a>
-          <a href="#settingsSetup">
-            <strong>Daily Automation</strong>
-            <span>Install or test the startup publisher for hands-off daily checks.</span>
+          <a href="#library">
+            <strong>Library</strong>
+            <span>Import or update the catalog only when your source data changes.</span>
           </a>
         </div>
         <div class="setup-wizard user-config-panel">
@@ -273,7 +255,7 @@
             <div>
               <p class="eyebrow">Daily Automation</p>
               <h4>Run the publisher when the computer starts</h4>
-              <p>The startup publisher checks the saved schedule, publishes anything due, writes a local result, then closes itself.</p>
+              <p>The startup publisher checks the saved Posting Plan, publishes anything due, writes a local result, then closes itself.</p>
             </div>
           </div>
           <div class="setup-result-grid automation-stats" id="startupAutomationStats"></div>
@@ -298,8 +280,8 @@
           <div id="tokenHealthStats" class="setup-result-grid"></div>
           <div id="tokenHealthDetails" class="table-wrap token-health-details"></div>
         </div>
-        <details class="archive-panel advanced-panel">
-          <summary>Advanced and legacy tools</summary>
+        <details class="archive-panel">
+          <summary>Archived setup tools</summary>
           <div class="archive-grid">
             <a href="#rules">
               <strong>Rotation</strong>
@@ -307,7 +289,7 @@
             </a>
             <a href="#schedule">
               <strong>Schedule Rules</strong>
-              <span>Older timer controls. Scheduling now lives in Schedule.</span>
+              <span>Older timer controls. Scheduling now lives in Publish Queue.</span>
             </a>
             <a href="#queue">
               <strong>Draft Queue</strong>
@@ -451,8 +433,8 @@
           <article>
             <span>4</span>
             <h4>Continue</h4>
-            <p>Open Schedule to set dates and start publishing.</p>
-            <a href="#publishingQueue">Open Schedule</a>
+            <p>Open the Publish Queue to set dates and start publishing.</p>
+            <a href="#publishingQueue">Open Publish Queue</a>
           </article>
         </div>
         <input id="manifestInput" class="hidden-input" type="file" accept=".csv,.json,text/csv,application/json" />
@@ -475,21 +457,21 @@
         <div class="section-head">
           <div>
             <p class="eyebrow">Generate</p>
-            <h3>Create a fresh batch of review-ready Reels</h3>
+            <h3>Create review-ready Reels</h3>
           </div>
         </div>
         <div class="workflow-steps generate-steps">
           <article>
             <span>1</span>
-            <h4>Batch settings</h4>
+            <h4>Choose batch</h4>
             <p>Set batch size, length, fade, and render speed below.</p>
           </article>
           <article class="generate-action-card">
             <span>2</span>
-            <h4>Create batch</h4>
+            <h4>Create Reels</h4>
             <p>Render the next batch and load it into Review automatically.</p>
             <div class="button-row tight">
-              <button id="createReviewBatchFlow">Create batch</button>
+              <button id="createReviewBatchFlow">Create review batch</button>
               <button id="stopReviewBatch" class="ghost" disabled>Stop render</button>
             </div>
             <div class="render-progress">
@@ -628,21 +610,26 @@
       <section id="publishingQueue" class="band view-section" data-view="publishingQueue">
         <div class="section-head">
           <div>
-            <p class="eyebrow">Schedule</p>
-            <h3>Ready, due, and next actions</h3>
+            <p class="eyebrow">Publish Queue</p>
+            <h3>Schedule and publish approved Reels</h3>
           </div>
         </div>
-        <div class="workflow-steps schedule-steps">
+        <div class="workflow-steps">
           <article>
             <span>1</span>
-            <h4>What's ready</h4>
-            <p>Bring approved Reels from Review, then set the dates and times below.</p>
+            <h4>Load approved</h4>
+            <p>Bring approved Reels from Review into this queue.</p>
             <button id="loadApprovedFromReview">Load approved</button>
           </article>
           <article>
             <span>2</span>
-            <h4>What's due</h4>
-            <p>Upload MP4s to R2 now. When upload finishes, this queue clears and the saved schedule moves to History.</p>
+            <h4>Set schedule</h4>
+            <p>Pick the dates and times for each Reel below.</p>
+          </article>
+          <article>
+            <span>3</span>
+            <h4>Upload videos</h4>
+            <p>Upload MP4s to R2 now. When upload finishes, this queue clears and the saved schedule moves to Posting Plan.</p>
             <div class="button-row tight">
               <button id="uploadApprovedToR2">Upload videos</button>
               <button id="stopR2Upload" class="ghost" disabled>Stop upload</button>
@@ -655,17 +642,18 @@
             </div>
           </article>
           <article>
-            <span>3</span>
-            <h4>What happens next</h4>
+            <span>4</span>
+            <h4>Run publisher</h4>
             <p>At each scheduled time it creates the container and publishes.</p>
             <button id="toggleAutoPublisher">Start auto publisher</button>
             <button id="publishDueContainers" class="secondary">Publish due now</button>
           </article>
         </div>
         <article class="settings-card wide command-card utility-panel">
-          <h4>Schedule status</h4>
+          <h4>Status</h4>
           <p class="note">Queue results, upload progress, and publishing messages appear here.</p>
           <div class="button-row tight">
+            <button id="syncLatestUpload">Load latest upload results</button>
             <button id="setDailyStartSchedule" class="secondary">Set to 01:00 daily</button>
             <button id="clearPublishingQueue" class="ghost">Clear queue</button>
           </div>
@@ -682,14 +670,13 @@
             <span id="publishProgressLabel">Publisher idle</span>
           </div>
           <input id="approvedInput" class="hidden-input" type="file" accept=".json,application/json" />
-          <button id="syncLatestUpload" class="ghost advanced-inline">Load latest upload results</button>
           <p id="apiPublishStatus" class="note"></p>
         </article>
         <article class="settings-card wide meta-queue-panel">
           <div class="meta-queue-head">
             <div>
               <p class="eyebrow">Meta Queue</p>
-              <h4>What is ready for Instagram and Facebook</h4>
+              <h4>What is ready for Instagram</h4>
             </div>
             <span id="metaQueueSummaryLabel">No queue loaded</span>
           </div>
@@ -711,11 +698,11 @@
       <section id="postingPlan" class="band view-section" data-view="postingPlan">
         <div class="section-head">
           <div>
-            <p class="eyebrow">History</p>
-            <h3>Posting plan and published history</h3>
+            <p class="eyebrow">Posting Plan</p>
+            <h3>Uploaded Reels and scheduled publish dates</h3>
           </div>
           <div class="button-row tight">
-            <button id="clearPostingPlan" class="ghost">Clear plan</button>
+            <button id="clearPostingPlan" class="ghost">Clear posted plan</button>
           </div>
         </div>
         <div id="postingPlanStats" class="timeline-stats"></div>
@@ -991,6 +978,6 @@
       </article>
     </template>
 
-    <script src="./app.js?v=20260618-pro1"></script>
+    <script src="./app.js"></script>
   </body>
 </html>

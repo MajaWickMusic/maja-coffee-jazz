@@ -3841,6 +3841,14 @@ async function pickFolder(payload = {}) {
     : "";
   const script = `
 Add-Type -AssemblyName System.Windows.Forms
+$owner = New-Object System.Windows.Forms.Form
+$owner.StartPosition = 'CenterScreen'
+$owner.Size = New-Object System.Drawing.Size(1, 1)
+$owner.ShowInTaskbar = $false
+$owner.TopMost = $true
+$owner.Opacity = 0
+$owner.Show()
+$owner.Activate()
 $dialog = New-Object System.Windows.Forms.OpenFileDialog
 $dialog.Title = '${title}'
 $dialog.CheckFileExists = $false
@@ -3850,9 +3858,14 @@ $dialog.FileName = 'Select this folder'
 $dialog.Filter = 'Folders|*.folder'
 $dialog.RestoreDirectory = $true
 ${initialDirectory ? `$dialog.InitialDirectory = '${initialDirectory}'` : ""}
-if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
-  $selected = Split-Path -Parent $dialog.FileName
-  if ($selected) { Write-Output $selected }
+try {
+  if ($dialog.ShowDialog($owner) -eq [System.Windows.Forms.DialogResult]::OK) {
+    $selected = Split-Path -Parent $dialog.FileName
+    if ($selected) { Write-Output $selected }
+  }
+} finally {
+  $owner.Close()
+  $owner.Dispose()
 }
 `;
 

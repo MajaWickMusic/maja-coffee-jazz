@@ -4819,6 +4819,19 @@ async function getYouTubeVideoPlan(payload = {}) {
 async function savePostingPlan(payload = {}) {
   const paths = profilePaths(requestProfileId(payload));
   const items = filterSuppressedPublishingItems(payload.items);
+  const allowEmpty = payload.allowEmpty === true || payload.reason === "clear" || payload.reason === "reset";
+  if (!items.length && !allowEmpty && existsSync(paths.postingPlanPath)) {
+    const existing = await loadPostingPlan(paths.id).catch(() => ({ items: [] }));
+    if (Array.isArray(existing.items) && existing.items.length) {
+      return {
+        ok: true,
+        guarded: true,
+        profileId: paths.id,
+        message: `Skipped empty schedule save to protect ${existing.items.length} existing planned Reel${existing.items.length === 1 ? "" : "s"}. Use the reset/clear action to empty it intentionally.`,
+        ...existing
+      };
+    }
+  }
   await mkdir(dirname(paths.postingPlanPath), { recursive: true });
   const plan = {
     updatedAt: new Date().toISOString(),
@@ -4838,6 +4851,19 @@ async function saveYouTubeVideoPlan(payload = {}) {
   const paths = profilePaths(requestProfileId(payload));
   const rawItems = filterSuppressedPublishingItems(payload.items);
   const items = rawItems.filter(isYouTubeFullTrackPlanItem);
+  const allowEmpty = payload.allowEmpty === true || payload.reason === "clear" || payload.reason === "reset";
+  if (!items.length && !allowEmpty && existsSync(paths.youtubeVideoPlanPath)) {
+    const existing = await loadYouTubeVideoPlan(paths.id).catch(() => ({ items: [] }));
+    if (Array.isArray(existing.items) && existing.items.length) {
+      return {
+        ok: true,
+        guarded: true,
+        profileId: paths.id,
+        message: `Skipped empty YouTube video plan save to protect ${existing.items.length} existing planned video${existing.items.length === 1 ? "" : "s"}. Use the reset/clear action to empty it intentionally.`,
+        ...existing
+      };
+    }
+  }
   await mkdir(dirname(paths.youtubeVideoPlanPath), { recursive: true });
   const plan = {
     updatedAt: new Date().toISOString(),
@@ -4870,8 +4896,8 @@ async function clearSchedulePipeline() {
     cancelledUpload = true;
   }
 
-  await savePostingPlan({ items: [] });
-  await saveYouTubeVideoPlan({ items: [] });
+  await savePostingPlan({ items: [], allowEmpty: true, reason: "reset" });
+  await saveYouTubeVideoPlan({ items: [], allowEmpty: true, reason: "reset" });
 
   if (existsSync(runDir)) {
     const files = await readdir(runDir).catch(() => []);

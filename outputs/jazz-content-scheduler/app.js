@@ -7291,10 +7291,17 @@ function mergeYouTubeVideoPublishResults(items) {
 
 async function syncPostingPlanToBackend() {
   try {
-    await postBackend("/api/posting-plan", {
+    const result = await postBackend("/api/posting-plan", {
       profileId: state.activeProfileId,
       items: state.postingPlan
     });
+    if (result.guarded && Array.isArray(result.items)) {
+      state.postingPlan = result.items.map((item) => normalizePublishItem(item, getPostingSettings()));
+      save();
+      renderPostingPlan();
+      renderPublishingQueue();
+      renderDashboard();
+    }
     await syncYouTubeVideoPlanToBackend();
   } catch {
     // The backend may be closed; local browser storage still keeps the plan.
@@ -7339,7 +7346,11 @@ async function syncYouTubeVideoPlanToBackend() {
   try {
     const items = applyScheduleToYouTubeVideos(state.youtubeVideoReviews);
     state.youtubeVideoReviews = items;
-    await postBackend("/api/youtube/video-plan", { profileId: state.activeProfileId, items });
+    const result = await postBackend("/api/youtube/video-plan", { profileId: state.activeProfileId, items });
+    if (result.guarded && Array.isArray(result.items)) {
+      state.youtubeVideoReviews = result.items.map((item) => normalizeReview(item));
+      save();
+    }
   } catch {
     // The backend may be closed; local browser storage still keeps the YouTube plan.
   }
@@ -8266,14 +8277,29 @@ $("#clearPublishingQueue").addEventListener("click", () => {
 });
 on("#resetSchedulePipeline", "click", resetSchedulePipeline);
 
-on("#clearPostingPlan", "click", () => {
+on("#clearPostingPlan", "click", async () => {
   if (!confirm("Clear the saved posting plan from this browser?")) return;
   state.postingPlan = [];
   save();
   renderPostingPlan();
   renderPublishingQueue();
   renderDashboard();
-  syncPostingPlanToBackend();
+  try {
+    await postBackend("/api/posting-plan", {
+      profileId: state.activeProfileId,
+      items: [],
+      allowEmpty: true,
+      reason: "clear"
+    });
+    await postBackend("/api/youtube/video-plan", {
+      profileId: state.activeProfileId,
+      items: [],
+      allowEmpty: true,
+      reason: "clear"
+    });
+  } catch {
+    // Local schedule was cleared; backend may be closed.
+  }
   setStatus("#apiPublishStatus", "Saved schedule cleared. Published history was kept.");
 });
 on("#refreshPublishingHistory", "click", loadPublishingHistory);

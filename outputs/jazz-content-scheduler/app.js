@@ -159,6 +159,7 @@ let uploadPollTimer = null;
 let publishProgressTimer = null;
 let publishRetryTimer = null;
 let albumVideoPollTimer = null;
+let songFactoryConvertPollTimer = null;
 let bestPerformanceRefreshTimer = null;
 let publishStartedAt = null;
 let publishRetryReadyAt = 0;
@@ -6543,8 +6544,16 @@ async function convertSongFactoryAudioFiles() {
   }
   if (!confirm(`Copy and convert downloaded audio?\n\nSource folder stays unchanged:\n${sourceFolder}\n\nIn-app album audio folder:\n${outputFolder}\n\nSecond distributor copy:\n${sourceFolder}\\Ditto Ready\n\nFormat: MP3, 44.1 kHz, stereo, 320 kbps`)) return;
   try {
-    setStatus("#songFactoryStatus", "Copying and converting Suno downloads into the app folder and a Ditto Ready copy...");
-    const result = await postBackend("/api/song-factory/prepare-audio", {
+    setStatus("#songFactoryStatus", "Starting audio conversion...");
+    setSongFactoryConvertControls(true);
+    setSongFactoryConvertProgress({
+      stage: "starting",
+      current: 0,
+      total: plan.tracks.length,
+      percent: 0,
+      message: "Preparing audio conversion..."
+    }, { running: true, startedAt: new Date().toISOString() });
+    const result = await postBackend("/api/song-factory/prepare-audio/start", {
       profileId: state.activeProfileId,
       plan,
       sourceFolder,
@@ -6555,15 +6564,104 @@ async function convertSongFactoryAudioFiles() {
     if (result.ok === false) {
       throw new Error(result.message || "Audio conversion was not completed.");
     }
-    const extras = [
-      result.missingAudioFiles ? `${result.missingAudioFiles} missing file${result.missingAudioFiles === 1 ? "" : "s"}` : "",
-      result.extraAudioFiles ? `${result.extraAudioFiles} extra file${result.extraAudioFiles === 1 ? "" : "s"}` : "",
-      result.failures?.length ? `${result.failures.length} conversion failure${result.failures.length === 1 ? "" : "s"}` : ""
-    ].filter(Boolean).join("; ");
-    setStatus("#songFactoryStatus", `${result.message}${extras ? ` (${extras})` : ""}. App output: ${result.outputFolder}. Ditto copy: ${result.mirrorFolder || "not created"}`);
+    setStatus("#songFactoryStatus", result.message || "Audio conversion started.");
+    startSongFactoryConvertPolling();
   } catch (error) {
+    setSongFactoryConvertControls(false);
+    setSongFactoryConvertProgress({
+      stage: "failed",
+      current: 0,
+      total: plan.tracks.length,
+      percent: 0,
+      message: error.message
+    });
     setStatus("#songFactoryStatus", `Could not convert audio: ${error.message}`);
   }
+}
+
+function songFactoryConvertCompletionMessage(result = {}) {
+  const extras = [
+    result.missingAudioFiles ? `${result.missingAudioFiles} missing file${result.missingAudioFiles === 1 ? "" : "s"}` : "",
+    result.extraAudioFiles ? `${result.extraAudioFiles} extra file${result.extraAudioFiles === 1 ? "" : "s"}` : "",
+    result.failures?.length ? `${result.failures.length} conversion failure${result.failures.length === 1 ? "" : "s"}` : ""
+  ].filter(Boolean).join("; ");
+  return `${result.message || "Audio conversion finished."}${extras ? ` (${extras})` : ""}. App output: ${result.outputFolder || "not set"}. Ditto copy: ${result.mirrorFolder || "not created"}`;
+}
+
+function startSongFactoryConvertPolling() {
+  if (songFactoryConvertPollTimer) clearInterval(songFactoryConvertPollTimer);
+  pollSongFactoryConvertStatus();
+  songFactoryConvertPollTimer = setInterval(pollSongFactoryConvertStatus, 1000);
+}
+
+async function pollSongFactoryConvertStatus() {
+  try {
+    const response = await fetch(`${backendUrl}/api/song-factory/prepare-audio/status`);
+    const status = await response.json();
+    setSongFactoryConvertProgress(status.progress || {}, status);
+    setSongFactoryConvertControls(Boolean(status.running));
+
+    if (!status.running) {
+      if (songFactoryConvertPollTimer) clearInterval(songFactoryConvertPollTimer);
+      songFactoryConvertPollTimer = null;
+      if (status.result?.ok) {
+        setStatus("#songFactoryStatus", songFactoryConvertCompletionMessage(status.result));
+      } else if (status.result?.ok === false) {
+        setStatus("#songFactoryStatus", status.result.message || "Audio conversion was not completed.");
+      } else if (status.error) {
+        setStatus("#songFactoryStatus", `Could not convert audio: ${status.error}`);
+      }
+    }
+  } catch (error) {
+    if (songFactoryConvertPollTimer) clearInterval(songFactoryConvertPollTimer);
+    songFactoryConvertPollTimer = null;
+    setSongFactoryConvertControls(false);
+    setStatus("#songFactoryStatus", "Lost connection to the backend while converting audio.");
+  }
+}
+
+async function resumeSongFactoryConvertStatusOnLoad() {
+  try {
+    const response = await fetch(`${backendUrl}/api/song-factory/prepare-audio/status`);
+    const status = await response.json();
+    if (!status?.ok) return;
+    setSongFactoryConvertProgress(status.progress || {}, status);
+    setSongFactoryConvertControls(Boolean(status.running));
+    if (status.running) {
+      setStatus("#songFactoryStatus", "Audio conversion is currently running.");
+      startSongFactoryConvertPolling();
+    }
+  } catch {}
+}
+
+function setSongFactoryConvertProgress(progress = {}, status = {}) {
+  const bar = $("#songFactoryConvertProgressBar");
+  const label = $("#songFactoryConvertProgressLabel");
+  const percent = Math.max(0, Math.min(100, Number(progress.percent) || 0));
+  if (bar) bar.style.width = `${percent}%`;
+  if (!label) return;
+
+  const total = Number(progress.total) || 0;
+  const current = Number(progress.current) || 0;
+  const startedAt = status.startedAt ? new Date(status.startedAt) : null;
+  const elapsedMs = startedAt && !Number.isNaN(startedAt.getTime()) ? Date.now() - startedAt.getTime() : 0;
+  const stage = progress.stage === "complete" ? "Conversion complete"
+    : progress.stage === "failed" ? "Conversion failed"
+    : progress.stage === "scanning" ? "Scanning files"
+    : progress.stage === "saving" ? "Saving metadata"
+    : progress.stage === "converting" ? "Converting audio"
+    : progress.message || "No active audio conversion";
+  const countText = total ? `Track ${Math.min(Math.max(current, 1), total)} of ${total}` : "No active conversion";
+  const elapsedText = elapsedMs > 0 ? formatDuration(elapsedMs) : "Just started";
+  const message = progress.message ? ` | ${progress.message}` : "";
+  label.innerHTML = `<span>${escapeHtml(`${stage} | ${countText} | ${Math.round(percent)}% | Elapsed: ${elapsedText}${message}`)}</span>`;
+}
+
+function setSongFactoryConvertControls(isRunning) {
+  const convert = $("#convertSongFactoryAudioFiles");
+  const rename = $("#renameSongFactoryAudioFiles");
+  if (convert) convert.disabled = isRunning;
+  if (rename) rename.disabled = isRunning;
 }
 
 async function renameSongFactoryAudioFiles() {
@@ -8481,6 +8579,7 @@ async function bootApp() {
   loadStartupStatus();
   resumeRenderStatusOnLoad();
   resumeYouTubeVideoRenderStatusOnLoad();
+  resumeSongFactoryConvertStatusOnLoad();
   refreshBestPerformingPresetOnStartup();
   scheduleBestPerformingPresetRefresh();
 }

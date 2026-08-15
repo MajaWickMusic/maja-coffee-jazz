@@ -1370,7 +1370,8 @@ pre {
 #albumVideoProgressBar,
 #renderStatusProgressBar,
 #uploadStatusProgressBar,
-#publishProgressBar {
+#publishProgressBar,
+#songFactoryConvertProgressBar {
   width: 0;
   height: 100%;
   border-radius: inherit;
@@ -1396,7 +1397,8 @@ pre {
 #renderStatusProgressLabel,
 #uploadStatusProgressLabel,
 #publishProgressLabel,
-#albumVideoProgressLabel {
+#albumVideoProgressLabel,
+#songFactoryConvertProgressLabel {
   display: block;
   grid-column: 1 / -1;
   justify-self: stretch;
@@ -1419,7 +1421,8 @@ pre {
 #renderStatusProgressLabel span,
 #uploadStatusProgressLabel span,
 #publishProgressLabel span,
-#albumVideoProgressLabel span {
+#albumVideoProgressLabel span,
+#songFactoryConvertProgressLabel span {
   color: var(--ink);
   font-weight: 800;
 }
@@ -3189,6 +3192,7 @@ textarea:focus {
 #renderStatusProgressBar,
 #uploadStatusProgressBar,
 #publishProgressBar,
+#songFactoryConvertProgressBar,
 #wizardProgressBar {
   background: var(--accent);
 }
@@ -4478,7 +4482,8 @@ textarea:focus {
 #uploadStatusProgressBar,
 #publishProgressBar,
 #wizardProgressBar,
-#albumVideoProgressBar {
+#albumVideoProgressBar,
+#songFactoryConvertProgressBar {
   background: linear-gradient(90deg, #e044c7, #8b35f6);
 }
 

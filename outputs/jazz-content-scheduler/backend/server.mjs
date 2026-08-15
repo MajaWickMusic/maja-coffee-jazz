@@ -97,6 +97,7 @@ let currentRenderJob = null;
 let currentYouTubeVideoJob = null;
 let currentUploadJob = null;
 let currentPublishJob = null;
+let currentSongFactoryAudioJob = null;
 
 function normalizeProfileId(value = "") {
   return String(value || DEFAULT_PROFILE_ID)
@@ -385,6 +386,15 @@ const server = createServer(async (request, response) => {
     if (request.method === "POST" && url.pathname === "/api/song-factory/prepare-audio") {
       const payload = await readJsonBody(request);
       return json(response, 200, await prepareSongFactoryAudio(payload));
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/song-factory/prepare-audio/start") {
+      const payload = await readJsonBody(request);
+      return json(response, 200, await startSongFactoryAudioJob(payload));
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/song-factory/prepare-audio/status") {
+      return json(response, 200, await songFactoryAudioJobStatus());
     }
 
     if (request.method === "POST" && url.pathname === "/api/song-factory/open-downloader") {
@@ -4365,13 +4375,29 @@ async function renameSongFactoryAudioFiles(payload = {}) {
   }
 
   const tempOperations = [];
-  for (const op of operations.filter((item) => !item.skipped)) {
-    const tempPath = join(sourceFolder, `.song-factory-rename-${Date.now()}-${Math.random().toString(16).slice(2)}${extname(op.from)}`);
-    await rename(op.from, tempPath);
-    tempOperations.push({ ...op, tempPath });
-  }
-  for (const op of tempOperations) {
-    await rename(op.tempPath, op.to);
+  try {
+    for (const op of operations.filter((item) => !item.skipped)) {
+      const tempPath = join(sourceFolder, `.song-factory-rename-${Date.now()}-${Math.random().toString(16).slice(2)}${extname(op.from)}`);
+      await rename(op.from, tempPath);
+      tempOperations.push({ ...op, tempPath });
+    }
+    for (const op of tempOperations) {
+      await rename(op.tempPath, op.to);
+    }
+  } catch (error) {
+    for (const op of tempOperations) {
+      if (existsSync(op.tempPath) && !existsSync(op.from)) {
+        await rename(op.tempPath, op.from).catch(() => {});
+      }
+    }
+    return {
+      ok: false,
+      message: isLockedFileError(error)
+        ? lockedFileMessage("rename")
+        : `Could not rename audio files: ${String(error?.message || error || "Unknown rename error")}`,
+      code: error?.code || "",
+      lockedFile: isLockedFileError(error)
+    };
   }
 
   return {
@@ -4407,7 +4433,105 @@ async function listSongFactoryAudioFiles(sourceFolder, extensions = SONG_FACTORY
   return audioFiles;
 }
 
-async function prepareSongFactoryAudio(payload = {}) {
+function isLockedFileError(error) {
+  return ["EBUSY", "EPERM", "EACCES"].includes(String(error?.code || "").toUpperCase())
+    || /resource busy|being used by another process|access is denied|permission denied/i.test(String(error?.message || error || ""));
+}
+
+function lockedFileMessage(action = "change") {
+  return `A downloaded MP3 is still locked by another app, so ReleasePilot could not ${action} it. Close Suno Music Downloader, any media player, and any Explorer preview of that folder, wait a few seconds, then try again.`;
+}
+
+function updateSongFactoryAudioProgress(job, progress = {}) {
+  if (!job) return;
+  job.progress = {
+    ...(job.progress || {}),
+    ...progress,
+    updatedAt: new Date().toISOString()
+  };
+}
+
+async function startSongFactoryAudioJob(payload = {}) {
+  if (currentSongFactoryAudioJob?.running) {
+    return {
+      ok: false,
+      message: "Audio conversion is already running.",
+      status: await songFactoryAudioJobStatus()
+    };
+  }
+
+  const tracks = Array.isArray(payload.plan?.tracks) ? payload.plan.tracks : [];
+  const id = `song-audio-${Date.now()}-${randomBytes(3).toString("hex")}`;
+  const job = {
+    id,
+    running: true,
+    startedAt: new Date().toISOString(),
+    finishedAt: "",
+    error: "",
+    result: null,
+    progress: {
+      stage: "starting",
+      current: 0,
+      total: tracks.length,
+      percent: 0,
+      message: "Preparing audio conversion..."
+    }
+  };
+  currentSongFactoryAudioJob = job;
+
+  setImmediate(async () => {
+    try {
+      job.result = await prepareSongFactoryAudio(payload, (progress) => updateSongFactoryAudioProgress(job, progress));
+      updateSongFactoryAudioProgress(job, {
+        stage: job.result?.ok === false ? "failed" : "complete",
+        current: Number(job.progress?.total) || tracks.length,
+        percent: job.result?.ok === false ? Number(job.progress?.percent) || 0 : 100,
+        message: job.result?.message || "Audio conversion finished."
+      });
+    } catch (error) {
+      job.error = String(error?.message || error || "Audio conversion failed.");
+      updateSongFactoryAudioProgress(job, {
+        stage: "failed",
+        message: job.error,
+        percent: Number(job.progress?.percent) || 0
+      });
+    } finally {
+      job.running = false;
+      job.finishedAt = new Date().toISOString();
+    }
+  });
+
+  return { ok: true, message: "Audio conversion started.", id, status: await songFactoryAudioJobStatus() };
+}
+
+async function songFactoryAudioJobStatus() {
+  if (!currentSongFactoryAudioJob) {
+    return {
+      ok: true,
+      running: false,
+      progress: {
+        stage: "idle",
+        current: 0,
+        total: 0,
+        percent: 0,
+        message: "No audio conversion is running."
+      }
+    };
+  }
+
+  return {
+    ok: true,
+    id: currentSongFactoryAudioJob.id,
+    running: currentSongFactoryAudioJob.running,
+    startedAt: currentSongFactoryAudioJob.startedAt,
+    finishedAt: currentSongFactoryAudioJob.finishedAt || "",
+    error: currentSongFactoryAudioJob.error || "",
+    result: currentSongFactoryAudioJob.result,
+    progress: currentSongFactoryAudioJob.progress || {}
+  };
+}
+
+async function prepareSongFactoryAudio(payload = {}, onProgress = null) {
   const paths = profilePaths(requestProfileId(payload));
   const plan = payload.plan || {};
   const settings = plan.settings || {};
@@ -4429,6 +4553,14 @@ async function prepareSongFactoryAudio(payload = {}) {
     return { ok: false, message: "Choose where the converted MP3 files should be saved." };
   }
 
+  onProgress?.({
+    stage: "scanning",
+    current: 0,
+    total: tracks.length,
+    percent: 2,
+    message: "Scanning downloaded audio files..."
+  });
+
   await mkdir(outputFolder, { recursive: true });
   if (mirrorFolder) await mkdir(mirrorFolder, { recursive: true });
   const audioFiles = await listSongFactoryAudioFiles(sourceFolder);
@@ -4444,6 +4576,13 @@ async function prepareSongFactoryAudio(payload = {}) {
     const title = String(tracks[index].title || `Track ${index + 1}`).trim();
     const targetPath = join(outputFolder, `${safeTrackFileBaseName(title, `Track ${index + 1}`)}.mp3`);
     const tempPath = join(outputFolder, `.song-factory-convert-${Date.now()}-${index}-${Math.random().toString(16).slice(2)}.mp3`);
+    onProgress?.({
+      stage: "converting",
+      current: index + 1,
+      total: count,
+      percent: Math.max(5, Math.round((index / Math.max(1, count)) * 90)),
+      message: `Converting ${title} (${index + 1}/${count})`
+    });
     try {
       await execFileAsync("ffmpeg", [
         "-hide_banner",
@@ -4465,6 +4604,13 @@ async function prepareSongFactoryAudio(payload = {}) {
         await copyFile(targetPath, mirrorPath);
       }
       converted.push({ title, from: file.path, to: targetPath, mirrorPath });
+      onProgress?.({
+        stage: "converting",
+        current: index + 1,
+        total: count,
+        percent: Math.min(95, Math.round(((index + 1) / Math.max(1, count)) * 90)),
+        message: `Converted ${title} (${index + 1}/${count})`
+      });
     } catch (error) {
       await rm(tempPath, { force: true }).catch(() => {});
       const message = String(error?.stderr || error?.message || error || "ffmpeg conversion failed").trim();
@@ -4473,6 +4619,13 @@ async function prepareSongFactoryAudio(payload = {}) {
   }
 
   if (converted.length && existsSync(paths.catalogPath)) {
+    onProgress?.({
+      stage: "saving",
+      current: count,
+      total: count,
+      percent: 96,
+      message: "Updating catalogue metadata..."
+    });
     const parsed = parseCsvRecords((await readFile(paths.catalogPath, "utf8")).replace(/^\uFEFF/, ""));
     const headers = ensureCatalogHeaders(parsed.headers);
     const byTitle = new Map(converted.map((item) => [normalizeKey(item.title), item.to]));

@@ -1,6 +1,9 @@
 const DEFAULT_PROFILE_ID = "majas-coffee-jazz-zone";
 const PROFILE_LIST_KEY = "jazzProfiles";
 const ACTIVE_PROFILE_KEY = "jazzActiveProfileId";
+const DEFAULT_SONG_FACTORY_AUDIO_FOLDERS = {
+  [DEFAULT_PROFILE_ID]: "E:\\FL Studio 20\\Data\\MaJaWick Music\\YouTube Topic streaming\\Maja's Coffee Jazz Zone\\Songs"
+};
 const DEFAULT_PROFILES = [
   {
     id: DEFAULT_PROFILE_ID,
@@ -934,6 +937,10 @@ function normalizeSetupFolderInput(value = "") {
     } catch {}
   }
   return text;
+}
+
+function defaultSongFactoryAudioFolder() {
+  return DEFAULT_SONG_FACTORY_AUDIO_FOLDERS[state.activeProfileId] || state.setupWizard?.audioRoot || "";
 }
 
 function stableHash(value) {
@@ -6168,6 +6175,10 @@ function renderSongFactory() {
   }
   renderSongFactoryAlbumSelect();
   renderSongFactoryRecentPlans();
+  const audioFolderInput = $("#songFactoryAudioFolder");
+  if (audioFolderInput && !audioFolderInput.value.trim()) {
+    audioFolderInput.value = defaultSongFactoryAudioFolder();
+  }
 
   const plan = state.songFactoryPlan;
   const title = $("#songFactoryPlanTitle");
@@ -6439,19 +6450,40 @@ async function saveSongFactoryCompletedAlbum() {
 
 async function pickSongFactoryAudioFolder() {
   try {
+    const input = $("#songFactoryAudioFolder");
+    const initialPath = input?.value.trim() || defaultSongFactoryAudioFolder();
     const result = await postBackend("/api/setup/pick-folder", {
       title: "Choose the folder containing downloaded Song Factory audio",
-      initialPath: $("#songFactoryAudioFolder")?.value.trim() || ""
+      initialPath
     });
     const folder = result.path || result.folder || "";
     if (folder) {
-      const input = $("#songFactoryAudioFolder");
       if (input) input.value = folder;
       setStatus("#songFactoryStatus", "Downloaded audio folder selected.");
+    } else {
+      setStatus("#songFactoryStatus", "No folder was selected. You can also paste a folder path directly into the box.");
     }
   } catch (error) {
     setStatus("#songFactoryStatus", `Could not choose audio folder: ${error.message}`);
   }
+}
+
+async function pasteSongFactoryAudioFolder() {
+  const input = $("#songFactoryAudioFolder");
+  if (!input) return;
+  let value = "";
+  try {
+    value = await navigator.clipboard.readText();
+  } catch {
+    value = prompt("Paste the folder path or file:/// folder link here") || "";
+  }
+  value = normalizeSetupFolderInput(value || defaultSongFactoryAudioFolder());
+  if (!value) {
+    setStatus("#songFactoryStatus", "No folder path was pasted.");
+    return;
+  }
+  input.value = value;
+  setStatus("#songFactoryStatus", "Downloaded audio folder path added.");
 }
 
 function openSongFactorySunoUrl() {
@@ -6598,7 +6630,7 @@ function clearSongFactoryPlan() {
   const sunoUrlInput = $("#songFactorySunoPlaylistUrl");
   if (sunoUrlInput) sunoUrlInput.value = "";
   const audioFolderInput = $("#songFactoryAudioFolder");
-  if (audioFolderInput) audioFolderInput.value = "";
+  if (audioFolderInput) audioFolderInput.value = defaultSongFactoryAudioFolder();
   state.songFactorySavedAlbum = null;
   save();
   renderSongFactory();
@@ -8152,6 +8184,7 @@ on("#openSongFactorySunoUrl", "click", openSongFactorySunoUrl);
 on("#openSongFactoryDownloader", "click", openSongFactoryDownloader);
 on("#copySongFactorySunoUrl", "click", copySongFactorySunoUrl);
 on("#pickSongFactoryAudioFolder", "click", pickSongFactoryAudioFolder);
+on("#pasteSongFactoryAudioFolder", "click", pasteSongFactoryAudioFolder);
 on("#convertSongFactoryAudioFiles", "click", convertSongFactoryAudioFiles);
 on("#renameSongFactoryAudioFiles", "click", renameSongFactoryAudioFiles);
 on("#clearSongFactoryPlan", "click", clearSongFactoryPlan);

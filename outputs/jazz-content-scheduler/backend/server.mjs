@@ -4474,6 +4474,19 @@ async function copyCurrentArtworkToMirror({ mirrorFolder = "", artworkPath = "",
   return mirroredArtworkPath;
 }
 
+async function findSongFactoryAlbumArtworkFromCatalog({ paths = profilePaths(DEFAULT_PROFILE_ID), albumTitle = "" } = {}) {
+  if (!albumTitle || !existsSync(paths.catalogPath)) return "";
+  const parsed = parseCsvRecords((await readFile(paths.catalogPath, "utf8")).replace(/^\uFEFF/, ""));
+  for (const row of parsed.rows) {
+    if (normalizeKey(row.Album) !== normalizeKey(albumTitle)) continue;
+    const artwork = normalizeLocalFolderInput(row["Artwork URL"] || row.Artwork || "");
+    if (!artwork || /^https?:\/\//i.test(artwork)) continue;
+    const resolved = resolveSafe(artwork);
+    if (resolved && existsSync(resolved)) return resolved;
+  }
+  return "";
+}
+
 async function startSongFactoryAudioJob(payload = {}) {
   if (currentSongFactoryAudioJob?.running) {
     return {
@@ -4566,7 +4579,10 @@ async function prepareSongFactoryAudio(payload = {}, onProgress = null) {
   const mirrorFolder = payload.mirrorToSourceFolder === false
     ? ""
     : normalizeLocalFolderInput(payload.mirrorFolder || join(sourceFolder || outputFolder || "", "Ditto Ready"));
-  const artworkPath = normalizeLocalFolderInput(payload.artworkPath || "");
+  let artworkPath = normalizeLocalFolderInput(payload.artworkPath || "");
+  if (!artworkPath || !existsSync(artworkPath)) {
+    artworkPath = await findSongFactoryAlbumArtworkFromCatalog({ paths, albumTitle });
+  }
   const hasArtwork = Boolean(artworkPath && existsSync(artworkPath));
   if (!albumTitle || !tracks.length) {
     return { ok: false, message: "Generate or recall a Song Factory album plan before converting audio." };

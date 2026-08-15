@@ -4451,6 +4451,29 @@ function updateSongFactoryAudioProgress(job, progress = {}) {
   };
 }
 
+async function clearMirrorArtworkFiles(mirrorFolder = "") {
+  if (!mirrorFolder || !existsSync(mirrorFolder)) return [];
+  const removed = [];
+  const entries = await readdir(mirrorFolder, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    if (!IMAGE_EXTENSIONS.has(extname(entry.name).toLowerCase())) continue;
+    const imagePath = join(mirrorFolder, entry.name);
+    await rm(imagePath, { force: true });
+    removed.push(imagePath);
+  }
+  return removed;
+}
+
+async function copyCurrentArtworkToMirror({ mirrorFolder = "", artworkPath = "", albumTitle = "" } = {}) {
+  if (!mirrorFolder || !artworkPath || !existsSync(artworkPath)) return "";
+  const extension = extname(artworkPath).toLowerCase() || ".jpg";
+  const targetName = `${safeTrackFileBaseName(albumTitle, "Album Artwork")} Artwork${extension}`;
+  const mirroredArtworkPath = join(mirrorFolder, targetName);
+  await copyFile(artworkPath, mirroredArtworkPath);
+  return mirroredArtworkPath;
+}
+
 async function startSongFactoryAudioJob(payload = {}) {
   if (currentSongFactoryAudioJob?.running) {
     return {
@@ -4537,12 +4560,14 @@ async function prepareSongFactoryAudio(payload = {}, onProgress = null) {
   const settings = plan.settings || {};
   const tracks = Array.isArray(plan.tracks) ? plan.tracks : [];
   const albumTitle = String(settings.albumTitle || payload.albumTitle || "").trim();
+  const artistName = String(settings.artistName || settings.artist || payload.artistName || DEFAULT_SETUP.pageName || "Maja's Coffee Jazz Zone").trim();
   const sourceFolder = normalizeLocalFolderInput(payload.sourceFolder || payload.folder || payload.audioFolder || "");
   const outputFolder = normalizeLocalFolderInput(payload.outputFolder || payload.audioDir || sourceFolder || "");
   const mirrorFolder = payload.mirrorToSourceFolder === false
     ? ""
     : normalizeLocalFolderInput(payload.mirrorFolder || join(sourceFolder || outputFolder || "", "Ditto Ready"));
   const artworkPath = normalizeLocalFolderInput(payload.artworkPath || "");
+  const hasArtwork = Boolean(artworkPath && existsSync(artworkPath));
   if (!albumTitle || !tracks.length) {
     return { ok: false, message: "Generate or recall a Song Factory album plan before converting audio." };
   }
@@ -4584,18 +4609,31 @@ async function prepareSongFactoryAudio(payload = {}, onProgress = null) {
       message: `Converting ${title} (${index + 1}/${count})`
     });
     try {
-      await execFileAsync("ffmpeg", [
+      const ffmpegArgs = [
         "-hide_banner",
         "-loglevel", "error",
         "-y",
         "-i", file.path,
-        "-vn",
+        ...(hasArtwork ? ["-i", artworkPath] : []),
+        "-map", "0:a:0",
+        ...(hasArtwork ? ["-map", "1:v:0"] : ["-vn"]),
         "-ar", "44100",
         "-ac", "2",
         "-codec:a", "libmp3lame",
         "-b:a", "320k",
+        ...(hasArtwork ? [
+          "-codec:v", "mjpeg",
+          "-disposition:v", "attached_pic",
+          "-id3v2_version", "3",
+          "-metadata:s:v", "title=Album cover",
+          "-metadata:s:v", "comment=Cover (front)"
+        ] : []),
+        "-metadata", `title=${title}`,
+        "-metadata", `album=${albumTitle}`,
+        "-metadata", `artist=${artistName}`,
         tempPath
-      ], { windowsHide: true, maxBuffer: 1024 * 1024 * 4 });
+      ];
+      await execFileAsync("ffmpeg", ffmpegArgs, { windowsHide: true, maxBuffer: 1024 * 1024 * 4 });
       await rm(targetPath, { force: true }).catch(() => {});
       await rename(tempPath, targetPath);
       let mirrorPath = "";
@@ -4643,18 +4681,27 @@ async function prepareSongFactoryAudio(payload = {}, onProgress = null) {
   }
 
   let mirroredArtworkPath = "";
-  if (mirrorFolder && artworkPath && existsSync(artworkPath)) {
-    mirroredArtworkPath = join(mirrorFolder, basename(artworkPath));
-    await copyFile(artworkPath, mirroredArtworkPath);
+  let removedMirrorArtwork = [];
+  if (mirrorFolder) {
+    onProgress?.({
+      stage: "saving",
+      current: count,
+      total: count,
+      percent: 98,
+      message: "Replacing Ditto Ready artwork..."
+    });
+    removedMirrorArtwork = await clearMirrorArtworkFiles(mirrorFolder);
+    mirroredArtworkPath = await copyCurrentArtworkToMirror({ mirrorFolder, artworkPath, albumTitle });
   }
 
   return {
     ok: failures.length === 0,
-    message: `Converted ${converted.length} file${converted.length === 1 ? "" : "s"} to Ditto-ready MP3${mirrorFolder ? " and saved a second copy in the picked folder" : ""}${failures.length ? `; ${failures.length} failed` : ""}.`,
+    message: `Converted ${converted.length} file${converted.length === 1 ? "" : "s"} to Ditto-ready MP3${hasArtwork ? " with the selected album artwork embedded" : ""}${mirrorFolder ? " and saved a second copy in the picked folder" : ""}${failures.length ? `; ${failures.length} failed` : ""}.`,
     sourceFolder,
     outputFolder,
     mirrorFolder,
     mirroredArtworkPath,
+    removedMirrorArtwork,
     converted,
     failures,
     extraAudioFiles: Math.max(0, audioFiles.length - tracks.length),

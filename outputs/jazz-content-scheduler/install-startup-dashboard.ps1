@@ -12,7 +12,7 @@ if (-not (Test-Path -LiteralPath $StarterScript)) {
 }
 
 $startupFolder = [Environment]::GetFolderPath("Startup")
-$cmdPath = Join-Path $startupFolder "Maja Coffee Jazz Dashboard.cmd"
+$cmdPath = Join-Path $startupFolder "ReleasePilot Dashboard.cmd"
 $delay = [Math]::Max(0, $DelaySeconds)
 $cmd = @(
   "@echo off",
@@ -24,4 +24,4 @@ $cmd = @(
 Set-Content -LiteralPath $cmdPath -Value $cmd -Encoding ASCII
 
 Write-Output "Installed startup dashboard shortcut: $cmdPath"
-Write-Output "It will open the Jazz Scheduler dashboard $DelaySeconds second(s) after Windows login."
+Write-Output "It will open the ReleasePilot dashboard $DelaySeconds second(s) after Windows login."

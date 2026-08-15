@@ -3,29 +3,40 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Jazz Content Scheduler</title>
-    <link rel="stylesheet" href="./styles.css?v=20260618-pro1" />
+    <title>ReleasePilot</title>
+    <link rel="icon" href="./assets/releasepilot.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="./assets/releasepilot-icon-256.png" />
+    <link rel="stylesheet" href="./styles.css?v=20260807-releasepilot-brand2" />
   </head>
   <body>
     <aside class="sidebar">
       <div class="brand">
-        <div class="mark">JZ</div>
+        <img class="mark" src="./assets/releasepilot-icon-256.png" alt="ReleasePilot logo" />
         <div>
-          <h1>Jazz Scheduler</h1>
-          <p>Catalog rotation for Reels, Stories, and posts</p>
+          <h1>ReleasePilot</h1>
+          <p>Create, review, schedule, publish</p>
         </div>
+      </div>
+      <div class="profile-switcher">
+        <label for="profileSelector">Profile</label>
+        <select id="profileSelector"></select>
+        <span id="profileDescription">Current artist workspace</span>
       </div>
       <nav>
         <a href="#dashboard">Dashboard</a>
+        <a href="#performance">Performance</a>
         <a href="#settingsSetup">Setup</a>
         <a href="#posting">Generate</a>
+        <a href="#songFactory">Song Factory</a>
         <a href="#review">Review</a>
         <a href="#publishingQueue">Schedule</a>
+        <a href="#albumVideos">Album Videos</a>
         <a href="#postingPlan">History</a>
+        <a href="#helpStatus">Status</a>
       </nav>
       <div class="status">
         <span class="dot"></span>
-        Daily publishing control room
+        Artist publishing control room
       </div>
     </aside>
 
@@ -33,60 +44,90 @@
       <section id="firstRunSetup" class="first-run view-section" data-view="firstRunSetup">
         <div class="first-run-hero">
           <p class="eyebrow">First-Time Setup</p>
-          <h2>Set up your artist content engine in a few guided steps.</h2>
-          <p>Choose your music and artwork, scan the library, check Meta publishing, and confirm the app is ready before using the main dashboard.</p>
+          <h2>Get ReleasePilot ready without touching code.</h2>
+          <p>Choose the artist library, scan the files, check publishing, then enter the dashboard. Optional steps are clearly marked so a new user knows what can wait.</p>
+        </div>
+        <div class="first-run-guide">
+          <article>
+            <strong>Required</strong>
+            <span>Artist name, music folder, library scan, and Meta health check.</span>
+          </article>
+          <article>
+            <strong>Optional</strong>
+            <span>Artwork folder, stock visual sources, album theme guidance, and startup automation.</span>
+          </article>
+          <article>
+            <strong>Private</strong>
+            <span>Tokens and API keys stay in the local backend `.env` file, never in the browser.</span>
+          </article>
         </div>
         <div class="first-run-progress">
           <div id="wizardProgressBar"></div>
         </div>
         <div id="wizardStepSummary" class="wizard-step-summary"></div>
         <div class="wizard-grid">
-          <article class="wizard-card">
+          <article class="wizard-card required">
             <span>1</span>
             <h3>Artist</h3>
-            <p>Name the project or artist this scheduler will manage.</p>
+            <p>Name the artist project ReleasePilot will manage. This appears in captions and setup records.</p>
             <label>
               Artist / brand name
               <input id="wizardArtistName" type="text" value="Maja's Coffee Jazz Zone" />
             </label>
           </article>
-          <article class="wizard-card">
+          <article class="wizard-card required">
             <span>2</span>
             <h3>Music</h3>
-            <p>Choose the main folder containing your audio files and album folders.</p>
+            <p>Choose the main folder that contains the albums and audio files.</p>
             <label>
               Audio folder
-              <input id="wizardAudioRoot" type="text" placeholder="Choose your music folder" />
+              <input id="wizardAudioRoot" type="text" placeholder="Paste C:\Music, file:///C:/Music, or choose folder" />
             </label>
-            <button id="wizardPickAudioRoot" class="secondary">Choose music folder</button>
+            <div class="button-row tight">
+              <button id="wizardPickAudioRoot" class="secondary">Choose music folder</button>
+              <button id="wizardPasteAudioRoot" class="ghost">Paste folder path</button>
+            </div>
           </article>
-          <article class="wizard-card">
+          <article class="wizard-card optional">
             <span>3</span>
-            <h3>Artwork</h3>
-            <p>Choose an artwork folder, or leave it blank if covers live inside album folders.</p>
+            <h3>Artwork <em>Optional</em></h3>
+            <p>Choose a separate artwork folder only if covers are not already inside album folders.</p>
             <label>
               Artwork folder
-              <input id="wizardArtworkRoot" type="text" placeholder="Optional artwork folder" />
+              <input id="wizardArtworkRoot" type="text" placeholder="Paste C:\Artwork, file:///C:/Artwork, or leave blank" />
             </label>
-            <button id="wizardPickArtworkRoot" class="secondary">Choose artwork folder</button>
+            <div class="button-row tight">
+              <button id="wizardPickArtworkRoot" class="secondary">Choose artwork folder</button>
+              <button id="wizardPasteArtworkRoot" class="ghost">Paste folder path</button>
+            </div>
           </article>
-          <article class="wizard-card">
+          <article class="wizard-card required">
             <span>4</span>
             <h3>Scan</h3>
-            <p>Build the local catalog used by the renderer.</p>
+            <p>Build the local catalog and check what is render-ready.</p>
             <button id="wizardScanLibrary">Scan library</button>
             <div id="wizardScanStats" class="wizard-mini-stats"></div>
           </article>
-          <article class="wizard-card">
+          <article class="wizard-card required">
             <span>5</span>
             <h3>Meta</h3>
-            <p>Check Instagram, Facebook Page, permissions, and token health.</p>
+            <p>Check Instagram, Facebook Page, permissions, and token health before publishing.</p>
             <button id="wizardCheckMeta" class="secondary">Check Meta connection</button>
             <div id="wizardMetaStats" class="wizard-mini-stats"></div>
           </article>
-          <article class="wizard-card">
+          <article class="wizard-card optional">
             <span>6</span>
-            <h3>Daily automation</h3>
+            <h3>Visuals <em>Optional</em></h3>
+            <p>Check stock visual sources and album theme guidance for the extra atmosphere Shorts.</p>
+            <div class="button-row tight">
+              <button id="wizardCheckVisualSources" class="secondary">Check visual sources</button>
+              <a href="#visualSources">Open visual setup</a>
+            </div>
+            <div id="wizardVisualStats" class="wizard-mini-stats"></div>
+          </article>
+          <article class="wizard-card optional">
+            <span>7</span>
+            <h3>Automation <em>Optional</em></h3>
             <p>Install the quiet startup publisher so due posts are checked after login.</p>
             <button id="wizardInstallStartupPublisher" class="secondary">Install startup publisher</button>
             <div id="wizardStartupStats" class="wizard-mini-stats"></div>
@@ -106,27 +147,20 @@
 
       <section id="dashboard" class="hero dashboard-hero view-section" data-view="dashboard">
         <div class="dashboard-primary">
+          <img class="dashboard-brand-lockup" src="./assets/releasepilot-wordmark-dark.png" alt="ReleasePilot" />
           <p class="eyebrow">Today</p>
           <h2 id="dashboardHeadline">Today's publishing status.</h2>
           <p id="dashboardSubline">Open the app, check what matters, and take the next action.</p>
           <div class="button-row dashboard-actions">
             <button id="dashboardDoToday">Run today's check</button>
-            <a href="#posting">Create drafts</a>
+            <a href="#posting">Create batch</a>
             <a href="#publishingQueue">Open schedule</a>
           </div>
         </div>
-        <div class="dashboard-status-stack">
-          <article>
-            <span>Next Scheduled Reel</span>
-            <strong id="dashboardNextReel">No Reel scheduled</strong>
-            <small id="dashboardNextTime">Build a batch and upload it to start the plan.</small>
-          </article>
-          <article>
-            <span>Action Needed</span>
-            <strong id="dashboardNextStep">Open Generate</strong>
-            <small id="dashboardNextStepText">The app will guide you through the next useful action.</small>
-          </article>
-        </div>
+        <article id="dashboardNextDetail" class="dashboard-post-card dashboard-next-card">
+          <p class="eyebrow">Next To Post</p>
+          <div class="dashboard-post-empty">Scheduled content will appear here once your publishing plan is ready.</div>
+        </article>
         <div class="summary-grid dashboard-summary dashboard-command-grid">
           <div>
             <strong id="trackCount">0</strong>
@@ -138,7 +172,7 @@
           </div>
           <div>
             <strong id="queueCount">0</strong>
-            <span>draft posts</span>
+            <span>schedule items</span>
           </div>
           <div>
             <strong id="dashboardReadyCount">0</strong>
@@ -155,21 +189,105 @@
         </div>
         <div class="dashboard-grid dashboard-secondary-grid">
           <article>
+            <span>Action Needed</span>
+            <strong id="dashboardNextStep">Open Generate</strong>
+            <small id="dashboardNextStepText">The app will guide you through the next useful action.</small>
+          </article>
+          <article>
             <span>Publishing Health</span>
             <strong id="dashboardMetaStatus">Check Meta</strong>
             <small>Use Setup if the token or permissions need attention.</small>
           </article>
-          <article>
-            <span>Last Published</span>
-            <strong id="dashboardLastPost">No local history yet</strong>
-            <small id="dashboardLastPostTime">Published posts from this scheduler appear here.</small>
-          </article>
-          <article>
-            <span>Library</span>
-            <strong id="dashboardLibraryStatus">Not scanned</strong>
-            <small>Setup checks missing artwork, duplicates, and unsupported files.</small>
+        </div>
+        <div class="dashboard-post-snapshot dashboard-latest-snapshot">
+          <article id="dashboardLatestDetail" class="dashboard-post-card">
+            <p class="eyebrow">Latest Posted</p>
+            <div class="dashboard-post-empty">Published content will appear here after the next successful upload.</div>
           </article>
         </div>
+      </section>
+
+      <section id="performance" class="band view-section performance-section" data-view="performance">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Performance</p>
+            <h3>YouTube stats and learning loop</h3>
+            <p>Sync uploaded Shorts and full videos, then use the local results to decide what visuals, albums, styles, and titles to make more of.</p>
+          </div>
+          <div class="button-row tight">
+            <button id="syncYouTubePerformance">Sync YouTube stats</button>
+            <button id="refreshYouTubePerformance" class="secondary">Refresh snapshot</button>
+          </div>
+        </div>
+        <p id="performanceStatus" class="note">Sync uploaded Shorts and YouTube videos to see what is working.</p>
+        <div class="summary-grid performance-summary">
+          <div>
+            <strong id="performanceVideoCount">0</strong>
+            <span>tracked uploads</span>
+          </div>
+          <div>
+            <strong id="performanceTotalViews">0</strong>
+            <span>total views</span>
+          </div>
+          <div>
+            <strong id="performanceAverageViews">0</strong>
+            <span>average views</span>
+          </div>
+          <div>
+            <strong id="performanceLastSync">Never</strong>
+            <span>last sync</span>
+          </div>
+        </div>
+        <div class="performance-grid">
+          <article class="settings-card">
+            <h4>Best Videos</h4>
+            <div id="performanceTopVideos" class="performance-list"></div>
+          </article>
+          <article class="settings-card">
+            <h4>What To Do Next</h4>
+            <div id="performanceRecommendations" class="performance-list"></div>
+          </article>
+        </div>
+        <div class="performance-grid four">
+          <article class="settings-card">
+            <h4>By Format</h4>
+            <div id="performanceByContentFormat" class="performance-list"></div>
+          </article>
+          <article class="settings-card">
+            <h4>By Creative Source</h4>
+            <div id="performanceByCreativeSource" class="performance-list"></div>
+          </article>
+          <article class="settings-card">
+            <h4>By Visual Type</h4>
+            <div id="performanceByVisual" class="performance-list"></div>
+          </article>
+          <article class="settings-card">
+            <h4>By Pexels/Search Cue</h4>
+            <div id="performanceByPexelsTerm" class="performance-list"></div>
+          </article>
+        </div>
+        <div class="performance-grid four">
+          <article class="settings-card">
+            <h4>By Album</h4>
+            <div id="performanceByAlbum" class="performance-list"></div>
+          </article>
+          <article class="settings-card">
+            <h4>By Style</h4>
+            <div id="performanceByStyle" class="performance-list"></div>
+          </article>
+          <article class="settings-card">
+            <h4>By Instrument</h4>
+            <div id="performanceByInstrument" class="performance-list"></div>
+          </article>
+          <article class="settings-card">
+            <h4>By Description</h4>
+            <div id="performanceByDescription" class="performance-list"></div>
+          </article>
+        </div>
+        <article class="settings-card">
+          <h4>Upload Detail</h4>
+          <div id="performanceUploadDetail" class="performance-detail-list"></div>
+        </article>
       </section>
 
       <section id="settingsSetup" class="band settings-hub view-section" data-view="settingsSetup">
@@ -181,10 +299,76 @@
           <button id="restartFirstRunSetup" class="secondary">Run setup wizard</button>
         </div>
         <div class="setup-tabs">
-          <a href="#settingsSetup">Library</a>
+          <a href="#settingsSetup">Profile & Library</a>
           <a href="#instagramSetup">Meta</a>
+          <a href="#youtubeSetup">YouTube</a>
+          <a href="#visualSources">Visual Sources</a>
           <a href="#settingsSetup">Automation</a>
-          <a href="#settingsSetup">Advanced</a>
+        </div>
+        <div class="setup-wizard profile-workspace-panel">
+          <div class="section-head compact">
+            <div>
+              <p class="eyebrow">Profile Workspace</p>
+              <h4>Artist profile and connection map</h4>
+              <p>Each profile keeps its own library scan, review queue, schedule, visual source records, and non-secret account IDs. Use this before scanning a second artist library.</p>
+            </div>
+            <div class="button-row tight">
+              <button id="saveProfileWorkspace">Save profile</button>
+              <button id="addProfileWorkspace" class="secondary">Add profile</button>
+            </div>
+          </div>
+          <div class="posting-grid">
+            <article class="settings-card">
+              <h4>Identity</h4>
+              <label>
+                Profile name
+                <input id="profileSetupName" type="text" placeholder="Artist or brand name" />
+              </label>
+              <label>
+                Social handle
+                <input id="profileSetupHandle" type="text" placeholder="@artistname" />
+              </label>
+              <label>
+                Description
+                <input id="profileSetupDescription" type="text" placeholder="Catalogue or style note" />
+              </label>
+            </article>
+            <article class="settings-card">
+              <h4>Meta IDs</h4>
+              <label>
+                Instagram user ID
+                <input id="profileInstagramUserId" type="text" placeholder="Optional until publishing is connected" />
+              </label>
+              <label>
+                Facebook Page ID
+                <input id="profileFacebookPageId" type="text" placeholder="Optional until publishing is connected" />
+              </label>
+            </article>
+            <article class="settings-card">
+              <h4>Storage</h4>
+              <label>
+                R2 bucket
+                <input id="profileR2Bucket" type="text" placeholder="Cloudflare R2 bucket name" />
+              </label>
+              <label>
+                Public base URL
+                <input id="profileR2PublicBaseUrl" type="url" placeholder="https://..." />
+              </label>
+            </article>
+            <article class="settings-card">
+              <h4>YouTube</h4>
+              <label>
+                Channel ID
+                <input id="profileYouTubeChannelId" type="text" placeholder="Optional channel ID" />
+              </label>
+              <label>
+                OAuth profile label
+                <input id="profileYouTubeOAuthLabel" type="text" placeholder="e.g. Coffee Jazz Google login" />
+              </label>
+            </article>
+          </div>
+          <div id="profileWorkspaceStats" class="setup-result-grid"></div>
+          <p id="profileWorkspaceStatus" class="note">Profile workspace details save locally and to the backend config when the backend is running.</p>
         </div>
         <div class="setup-wizard">
           <div>
@@ -206,27 +390,35 @@
               <h5>Audio folder</h5>
               <label>
                 Audio root
-                <input id="setupAudioRoot" type="text" placeholder="Choose the folder containing albums/tracks" />
+                <input id="setupAudioRoot" type="text" placeholder="Paste C:\Music, file:///C:/Music, or choose folder" />
               </label>
-              <button id="pickAudioRoot" class="secondary">Choose audio folder</button>
+              <div class="button-row tight">
+                <button id="pickAudioRoot" class="secondary">Choose audio folder</button>
+                <button id="pasteAudioRoot" class="ghost">Paste folder path</button>
+              </div>
             </article>
             <article>
               <span>3</span>
               <h5>Artwork folder</h5>
               <label>
                 Artwork root
-                <input id="setupArtworkRoot" type="text" placeholder="Optional if artwork is inside album folders" />
+                <input id="setupArtworkRoot" type="text" placeholder="Paste C:\Artwork, file:///C:/Artwork, or leave blank" />
               </label>
-              <button id="pickArtworkRoot" class="secondary">Choose artwork folder</button>
+              <div class="button-row tight">
+                <button id="pickArtworkRoot" class="secondary">Choose artwork folder</button>
+                <button id="pasteArtworkRoot" class="ghost">Paste folder path</button>
+              </div>
             </article>
             <article>
               <span>4</span>
               <h5>Scan and save</h5>
               <p>Creates the local catalog used by Generate.</p>
               <button id="scanSetupLibrary">Scan library</button>
+              <button id="mergeFolderCatalog" class="secondary">Merge missing album folders</button>
             </article>
           </div>
           <p id="setupLibraryStatus" class="note"></p>
+          <div id="catalogMergeReport" class="merge-report"></div>
           <div id="setupLibrarySummary" class="setup-result-grid"></div>
           <div id="setupLibraryPreview" class="table-wrap"></div>
           <div class="library-review-panel">
@@ -243,13 +435,22 @@
               </div>
             </div>
             <div id="libraryIssueStats" class="setup-result-grid"></div>
+            <div id="missingArtworkAlbums" class="table-wrap"></div>
             <div id="libraryIssueList" class="table-wrap"></div>
           </div>
         </div>
         <div class="settings-link-grid">
           <a href="#instagramSetup">
-            <strong>Instagram Setup</strong>
-            <span>Check Meta/API readiness and account connection details.</span>
+            <strong>Meta Setup</strong>
+            <span>Check Instagram/Facebook readiness and account connection details.</span>
+          </a>
+          <a href="#youtubeSetup">
+            <strong>YouTube Setup</strong>
+            <span>Reconnect Google OAuth, check credentials, and test YouTube uploads.</span>
+          </a>
+          <a href="#visualSources">
+            <strong>Visual Sources</strong>
+            <span>Search and approve stock atmosphere footage for non-artwork Shorts.</span>
           </a>
           <a href="#settingsSetup">
             <strong>Daily Automation</strong>
@@ -272,15 +473,15 @@
           <div class="section-head compact">
             <div>
               <p class="eyebrow">Daily Automation</p>
-              <h4>Run the publisher when the computer starts</h4>
-              <p>The startup publisher checks the saved schedule, publishes anything due, writes a local result, then closes itself.</p>
+              <h4>Run the publisher in the background</h4>
+              <p>The background publisher checks the saved schedule after login and during the day. Each check publishes anything due, writes a local result, then closes itself.</p>
             </div>
           </div>
           <div class="setup-result-grid automation-stats" id="startupAutomationStats"></div>
           <div class="button-row">
-            <button id="installStartupPublisher">Install startup publisher</button>
+            <button id="installStartupPublisher">Install background publisher</button>
             <button id="runStartupPublisherTest" class="secondary">Run test now</button>
-            <button id="uninstallStartupPublisher" class="ghost">Remove startup publisher</button>
+            <button id="uninstallStartupPublisher" class="ghost">Remove background publisher</button>
             <button id="installStartupDashboard" class="secondary">Open dashboard on startup</button>
             <button id="uninstallStartupDashboard" class="ghost">Stop opening dashboard</button>
           </div>
@@ -298,128 +499,6 @@
           <div id="tokenHealthStats" class="setup-result-grid"></div>
           <div id="tokenHealthDetails" class="table-wrap token-health-details"></div>
         </div>
-        <details class="archive-panel advanced-panel">
-          <summary>Advanced and legacy tools</summary>
-          <div class="archive-grid">
-            <a href="#rules">
-              <strong>Rotation</strong>
-              <span>Old draft-plan rules. Batch generation now lives in Generate.</span>
-            </a>
-            <a href="#schedule">
-              <strong>Schedule Rules</strong>
-              <span>Older timer controls. Scheduling now lives in Schedule.</span>
-            </a>
-            <a href="#queue">
-              <strong>Draft Queue</strong>
-              <span>Legacy draft-plan output from before rendered review batches.</span>
-            </a>
-            <a href="#connectors">
-              <strong>Stores</strong>
-              <span>Early notes for Spotify, YouTube, SoundCloud, and distributor data.</span>
-            </a>
-          </div>
-        </details>
-      </section>
-
-      <section id="library" class="band view-section" data-view="library">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">Library</p>
-            <h3>Import tracks</h3>
-          </div>
-          <button id="loadSample" class="secondary">Load sample catalog</button>
-        </div>
-        <div class="split">
-          <div class="panel">
-            <label for="fileInput">Import a CSV file</label>
-            <input id="fileInput" type="file" accept=".csv,text/csv" />
-            <label for="catalogInput">Paste CSV-style rows</label>
-            <textarea id="catalogInput" spellcheck="false" placeholder="Title,Artist,Album,Artwork URL,Audio file or URL,Store URL,Mood,BPM,ISRC"></textarea>
-            <div class="button-row">
-              <button id="importCatalog">Import catalog</button>
-              <button id="clearCatalog" class="ghost">Clear</button>
-            </div>
-          </div>
-          <div class="panel compact">
-            <h4>Expected fields</h4>
-            <p>Use one track per line, or choose a distributor CSV. Artwork should be the album cover. Audio should be your master/audio file or a URL that the future renderer can download.</p>
-            <p class="note">Spotify, YouTube, and SoundCloud can help discover metadata, but full reliable audio usually needs your own files, distributor export, or approved store/API access.</p>
-          </div>
-        </div>
-        <div id="trackTable" class="table-wrap"></div>
-      </section>
-
-      <section id="rules" class="band view-section" data-view="rules">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">Rotation</p>
-            <h3>Random rules</h3>
-          </div>
-          <button id="generateQueue">Generate next drafts</button>
-        </div>
-        <div class="controls-grid">
-          <label>
-            Cooldown days
-            <input id="cooldownDays" type="number" min="0" value="90" />
-          </label>
-          <label>
-            Drafts to generate
-            <input id="draftCount" type="number" min="1" max="60" value="14" />
-          </label>
-          <label>
-            Bias
-            <select id="biasMode">
-              <option value="fresh">Prioritize unused tracks</option>
-              <option value="new">Favor newest imports</option>
-              <option value="mood">Balance moods</option>
-              <option value="random">Pure random</option>
-            </select>
-          </label>
-          <label>
-            Repeat album limit
-            <input id="albumLimit" type="number" min="1" value="2" />
-          </label>
-        </div>
-      </section>
-
-      <section id="schedule" class="band view-section" data-view="schedule">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">Timers</p>
-            <h3>Separate posting schedules</h3>
-          </div>
-        </div>
-        <div class="schedule-grid">
-          <article class="schedule-card">
-            <h4>Reels</h4>
-            <label>Every <input id="reelsEvery" type="number" min="1" value="1" /> days</label>
-            <label>Time <input id="reelsTime" type="time" value="01:00" /></label>
-            <label class="check"><input id="reelsEnabled" type="checkbox" checked /> Enabled</label>
-          </article>
-          <article class="schedule-card">
-            <h4>Stories</h4>
-            <label>Every <input id="storiesEvery" type="number" min="1" value="3" /> days</label>
-            <label>Time <input id="storiesTime" type="time" value="12:00" /></label>
-            <label class="check"><input id="storiesEnabled" type="checkbox" checked /> Enabled</label>
-          </article>
-          <article class="schedule-card">
-            <h4>Image/Text Posts</h4>
-            <label>Every <input id="postsEvery" type="number" min="1" value="7" /> days</label>
-            <label>Time <input id="postsTime" type="time" value="09:00" /></label>
-            <label class="check"><input id="postsEnabled" type="checkbox" checked /> Enabled</label>
-          </article>
-        </div>
-      </section>
-
-      <section id="queue" class="band view-section" data-view="queue">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">Draft Queue</p>
-            <h3>Next content plan</h3>
-          </div>
-          <button id="exportQueue" class="secondary">Export JSON</button>
-        </div>
-        <div id="queueList" class="queue-list"></div>
       </section>
 
       <section id="review" class="band view-section" data-view="review">
@@ -432,9 +511,12 @@
         <div class="workflow-steps review-steps">
           <article>
             <span>1</span>
-            <h4>Load latest batch</h4>
-            <p>Bring in the newest rendered Reels automatically.</p>
-            <button id="loadLatestBatchFlow">Load latest batch</button>
+            <h4>Refresh review queue</h4>
+            <p>Reload the saved review list or bring in the newest rendered batch.</p>
+            <div class="button-row tight">
+              <button id="restoreReviewCache">Refresh queue</button>
+              <button id="loadLatestBatchFlow" class="secondary">Load newest batch</button>
+            </div>
             <p id="reviewLoadStatus" class="note step-status"></p>
           </article>
           <article>
@@ -444,9 +526,9 @@
           </article>
           <article>
             <span>3</span>
-            <h4>Send to queue</h4>
+            <h4>Add to Schedule</h4>
             <p>Move approved Reels into the publishing timeline.</p>
-            <button id="sendApprovedToQueueFlow">Send approved</button>
+            <button id="sendApprovedToQueueFlow">Schedule approved</button>
           </article>
           <article>
             <span>4</span>
@@ -463,7 +545,7 @@
         </div>
         <div class="review-toolbar">
           <button class="filter active" data-review-filter="all">All</button>
-          <button class="filter" data-review-filter="draft">Draft</button>
+          <button class="filter" data-review-filter="draft">Needs review</button>
           <button class="filter" data-review-filter="approved">Approved</button>
           <button class="filter" data-review-filter="rejected">Rejected</button>
           <button class="filter" data-review-filter="posted">Posted</button>
@@ -487,7 +569,7 @@
           <article class="generate-action-card">
             <span>2</span>
             <h4>Create batch</h4>
-            <p>Render the next batch and load it into Review automatically.</p>
+            <p>Render the next batch, auto-match atmosphere clips from the track theme, and load it into Review.</p>
             <div class="button-row tight">
               <button id="createReviewBatchFlow">Create batch</button>
               <button id="stopReviewBatch" class="ghost" disabled>Stop render</button>
@@ -508,18 +590,16 @@
         </div>
         <div class="posting-grid">
           <article class="settings-card wide priority-card">
-            <h4>Batch / content mix</h4>
+            <h4>Batch settings</h4>
             <div class="mix-grid">
-              <label>Reels % <input id="mixReels" type="number" min="0" max="100" value="70" /></label>
-              <label>Stories % <input id="mixStories" type="number" min="0" max="100" value="20" /></label>
-              <label>Feed % <input id="mixFeed" type="number" min="0" max="100" value="10" /></label>
               <label>Cooldown days <input id="postingCooldown" type="number" min="0" value="90" /></label>
               <label>Batch size <input id="renderBatchSize" type="number" min="1" max="50" value="7" /></label>
               <label>
                 Render preset
                 <select id="renderPreset">
                   <option value="fast">Fast batch</option>
-                  <option value="balanced" selected>Balanced</option>
+                  <option value="optimized" selected>Optimised review</option>
+                  <option value="balanced">Balanced</option>
                   <option value="high">High quality</option>
                 </select>
               </label>
@@ -527,6 +607,19 @@
               <label>Max seconds <input id="renderMaxSeconds" type="number" min="5" max="180" value="30" /></label>
               <label>Fade seconds <input id="renderFadeSeconds" type="number" min="0" max="20" value="4" /></label>
             </div>
+          </article>
+
+          <article class="settings-card wide performance-preset-card">
+            <div>
+              <h4>Performance-led preset</h4>
+              <p class="note">Build the next batch from the albums, instruments, visual sources, and search terms that are already doing best in Performance.</p>
+            </div>
+            <div class="button-row tight">
+              <button id="applyPerformanceGeneratePreset" class="secondary">Use stats preset</button>
+              <button id="clearPerformanceGeneratePreset" class="ghost">Clear preset</button>
+            </div>
+            <p id="performanceGeneratePresetStatus" class="note"></p>
+            <div id="performanceGeneratePresetSummary" class="performance-preset-summary"></div>
           </article>
 
           <article class="settings-card wide">
@@ -547,37 +640,26 @@
               <div><strong>Album variety</strong><span>Prioritises one track per album before repeats.</span></div>
               <div><strong>Recent-track cooldown</strong><span>Uses the cooldown setting to avoid obvious repeats.</span></div>
               <div><strong>Visual rotation</strong><span>Rotates templates so batches feel less samey.</span></div>
+              <div><strong>Daily track spread</strong><span>Schedule fills the 3 Shorts slots with different tracks first, then moves alternate visuals for the same track onto later days.</span></div>
+              <div><strong>Animated artwork</strong><span>Artwork Shorts use parallax, cover tilt, reflection, steam, light leaks, grain, and waveform glow without theme text overlays.</span></div>
+              <div><strong>Auto stock match</strong><span>Uses track title, album, style, and visual mood to source or pick atmosphere clips from enabled providers.</span></div>
+              <div><strong>Mood-matched visuals</strong><span>Atmosphere clips are graded between cafe steam, rainy window, vinyl room, golden hour, noir, bossa, study, and lounge looks.</span></div>
               <div><strong>Human captions</strong><span>Captions vary by title, album, mood, and length.</span></div>
             </div>
           </article>
 
           <article class="settings-card">
-            <h4>Approval</h4>
-            <label>
-              Publishing mode
-              <select id="publishMode">
-                <option value="approval">Approval required</option>
-                <option value="auto-approved">Auto-post approved only</option>
-                <option value="manual">Manual export only</option>
-              </select>
-            </label>
+            <h4>Review safety</h4>
+            <p class="note">Generated videos go through Review before they can be scheduled or published.</p>
             <label class="check"><input id="requirePreview" type="checkbox" checked /> Require preview before posting</label>
             <label class="check"><input id="skipFallbackAudio" type="checkbox" checked /> Avoid fallback audio matches</label>
           </article>
 
           <article class="settings-card">
-            <h4>Instagram</h4>
+            <h4>Meta / Instagram</h4>
             <label>
               Account label
               <input id="igAccount" type="text" placeholder="@majascoffeejazzzone" />
-            </label>
-            <label>
-              Default post type
-              <select id="defaultPostType">
-                <option value="reel">Reel</option>
-                <option value="story">Story</option>
-                <option value="feed">Feed post</option>
-              </select>
             </label>
             <label class="check"><input id="publishOriginalAudio" type="checkbox" checked /> Use baked-in original audio</label>
             <p class="note">Every published Reel is sent to Instagram and the linked Facebook Page.</p>
@@ -617,11 +699,156 @@
               </select>
             </label>
             <label>
-              Max posts per day
-              <input id="maxPostsPerDay" type="number" min="1" max="10" value="1" />
+              Meta/Instagram per day
+              <input id="maxPostsPerDay" type="number" min="1" max="1" value="1" readonly />
+            </label>
+            <label>
+              Shorts per day
+              <input id="shortsPerDay" type="number" min="1" max="6" value="3" />
+            </label>
+            <label>
+              Daily Short times
+              <input id="shortScheduleTimes" type="text" value="06:00, 11:00, 14:00" />
             </label>
           </article>
 
+        </div>
+      </section>
+
+      <section id="songFactory" class="band view-section" data-view="songFactory">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Song Factory</p>
+            <h3>Create Suno-ready song plans</h3>
+          </div>
+        </div>
+        <div class="song-factory-hero">
+          <article>
+            <span>Suno API</span>
+            <strong>Official API access is account-gated</strong>
+            <p>Use this manual workflow now. If you later get official Suno Platform credentials, this section is structured so API generation can be connected cleanly.</p>
+            <a href="https://platform.suno.com/" target="_blank" rel="noreferrer">Open Suno Platform</a>
+          </article>
+          <article>
+            <span>Current Workflow</span>
+            <strong>Generate prompts, create in Suno, import finished audio</strong>
+            <p>The app avoids unofficial scraping and keeps all plans profile-scoped, so each artist workspace has its own song ideas and metadata.</p>
+          </article>
+        </div>
+        <div class="song-factory-grid">
+          <article class="settings-card song-factory-controls">
+            <div class="section-head compact">
+              <div>
+                <p class="eyebrow">1. Source And Direction</p>
+                <h4>Build from your catalogue</h4>
+                <p>Choose an existing album lane, set the track count, energy and length, then refine the generated prompt before creating the plan.</p>
+              </div>
+            </div>
+            <label>
+              Base on catalogue album
+              <select id="songFactoryBaseAlbum">
+                <option value="">No source album selected</option>
+              </select>
+              <span class="field-hint">Picking an album fills the prompt and mood with editable style, instrument, theme, and atmosphere cues from your catalogue.</span>
+            </label>
+            <div class="mix-grid compact song-factory-quick-settings">
+              <label>Tracks <input id="songFactoryTrackCount" type="number" min="1" max="24" value="10" /></label>
+              <label>
+                Energy
+                <select id="songFactoryEnergy">
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </label>
+              <label>
+                Length
+                <select id="songFactoryLength">
+                  <option value="1:30-2:30">1:30-2:30</option>
+                  <option value="2:30-3:30" selected>2:30-3:30</option>
+                  <option value="3:00-4:00">3:00-4:00</option>
+                  <option value="4:00-6:00">4:00-6:00</option>
+                </select>
+              </label>
+            </div>
+            <label>
+              Album title
+              <input id="songFactoryAlbumTitle" type="text" placeholder="Example: Wooden Reverie II" />
+            </label>
+            <label>
+              Album prompt
+              <textarea id="songFactoryBrief" rows="7" placeholder="Example: Warm organic marimba coffee jazz, morning market mood, sunlit wooden tones. Track names: Courtyard Rhythm, Steam Over Mahogany, Sunlit Mallets, Quiet Market Walk."></textarea>
+            </label>
+            <label>
+              Mood / atmosphere
+              <input id="songFactoryMood" type="text" value="warm, relaxed, cinematic" />
+            </label>
+            <div class="button-row">
+              <button id="generateSongFactoryPlan">Generate album plan</button>
+              <button id="clearSongFactoryPlan" class="ghost">Clear</button>
+            </div>
+          </article>
+          <article class="settings-card wide song-factory-output-card">
+            <div class="section-head compact">
+              <div>
+                <p class="eyebrow">2. Generated Plan</p>
+                <h4 id="songFactoryPlanTitle">No active song plan</h4>
+              </div>
+            </div>
+            <div id="songFactoryStats" class="song-factory-stats"></div>
+            <div id="songFactoryList" class="song-factory-list"></div>
+          </article>
+          <article class="settings-card wide song-factory-import-card">
+            <div class="section-head compact">
+              <div>
+                <p class="eyebrow">3. Save And Import</p>
+                <h4>Attach artwork and finished audio</h4>
+              </div>
+            </div>
+            <div id="songFactorySaveSummary" class="song-factory-save-summary">
+              <div>
+                <p class="eyebrow">Saving This Album</p>
+                <h4>No active song plan</h4>
+              </div>
+              <p class="note">Generate or recall a plan to see the album title, mood and final album prompt before saving.</p>
+            </div>
+            <label>
+              Album artwork file
+              <input id="songFactoryArtworkUpload" type="file" accept="image/png,image/jpeg,image/webp" />
+              <span class="field-hint">PNG, JPG, or WebP uploads are saved into the album folder as a 3000x3000 JPEG and written into the catalogue artwork field.</span>
+            </label>
+            <div class="button-row">
+              <button id="saveSongFactoryCompletedAlbum" class="secondary">Save as completed album</button>
+              <button id="openSongFactoryAlbumFolder" class="ghost">Open saved folder</button>
+            </div>
+            <label>
+              Suno playlist URL
+              <input id="songFactorySunoPlaylistUrl" type="url" placeholder="Paste the Suno playlist/share URL for your downloader" />
+              <span class="field-hint">Use this with your Suno downloader app, then convert the downloaded files below.</span>
+            </label>
+            <div class="button-row">
+              <button id="openSongFactorySunoUrl" class="secondary">Open URL</button>
+              <button id="openSongFactoryDownloader" class="secondary">Download with app</button>
+              <button id="copySongFactorySunoUrl" class="ghost">Copy URL</button>
+            </div>
+            <label>
+              Downloaded Suno audio folder
+              <input id="songFactoryAudioFolder" type="text" placeholder="Choose the folder containing Suno MP3 downloads" />
+              <span class="field-hint">Original downloads stay here. Convert for Ditto saves clean MP3s into the app album folder and a Ditto Ready subfolder inside this picked folder.</span>
+            </label>
+            <div class="button-row">
+              <button id="pickSongFactoryAudioFolder" class="secondary">Pick download folder</button>
+              <button id="convertSongFactoryAudioFiles" class="secondary">Convert for Ditto</button>
+              <button id="renameSongFactoryAudioFiles" class="ghost">Rename MP3s from plan</button>
+            </div>
+            <div class="button-row tight song-factory-history-row">
+              <select id="songFactoryRecentPlans">
+                <option value="">No recent plans yet</option>
+              </select>
+              <button id="recallSongFactoryPlan" class="secondary">Recall plan</button>
+            </div>
+            <p id="songFactoryStatus" class="note">Create a plan, then build it in Suno, save the album, and import the finished artwork/audio here.</p>
+          </article>
         </div>
       </section>
 
@@ -641,8 +868,8 @@
           </article>
           <article>
             <span>2</span>
-            <h4>What's due</h4>
-            <p>Upload MP4s to R2 now. When upload finishes, this queue clears and the saved schedule moves to History.</p>
+            <h4>Upload videos</h4>
+            <p>Upload MP4s to R2. After upload, they move into the saved schedule below and the staging list is cleared.</p>
             <div class="button-row tight">
               <button id="uploadApprovedToR2">Upload videos</button>
               <button id="stopR2Upload" class="ghost" disabled>Stop upload</button>
@@ -657,17 +884,17 @@
           <article>
             <span>3</span>
             <h4>What happens next</h4>
-            <p>At each scheduled time it creates the container and publishes.</p>
+            <p>It posts one Meta/Instagram Reel per day, while YouTube Shorts can use every scheduled Short slot.</p>
             <button id="toggleAutoPublisher">Start auto publisher</button>
             <button id="publishDueContainers" class="secondary">Publish due now</button>
           </article>
         </div>
         <article class="settings-card wide command-card utility-panel">
-          <h4>Schedule status</h4>
-          <p class="note">Queue results, upload progress, and publishing messages appear here.</p>
+          <h4>Schedule controls</h4>
+          <p class="note">The active staging queue is only for newly approved Reels. Uploaded videos are saved into the scheduled plan and still publish from here when due.</p>
           <div class="button-row tight">
-            <button id="setDailyStartSchedule" class="secondary">Set to 01:00 daily</button>
-            <button id="clearPublishingQueue" class="ghost">Clear queue</button>
+            <button id="refreshScheduleState" class="secondary">Refresh Schedule</button>
+            <button id="autoFillApprovedSchedule" class="secondary">Auto-fill approved schedule</button>
           </div>
           <div class="status-progress">
             <div class="render-progress-track">
@@ -681,15 +908,25 @@
             </div>
             <span id="publishProgressLabel">Publisher idle</span>
           </div>
+          <details class="maintenance-tools">
+            <summary>Maintenance and re-send tools</summary>
+            <div class="button-row tight">
+              <button id="resendMeta" class="secondary">Re-send to Meta/Instagram</button>
+              <button id="resendYouTubeShorts" class="secondary">Re-send to YouTube Shorts</button>
+              <button id="syncLatestUpload" class="ghost">Refresh upload state</button>
+              <button id="clearPublishingQueue" class="ghost">Clear staging queue</button>
+              <button id="resetSchedulePipeline" class="ghost">Reset schedule pipeline</button>
+              <button id="cleanupR2Uploads" class="ghost">Delete unused R2 uploads</button>
+            </div>
+          </details>
           <input id="approvedInput" class="hidden-input" type="file" accept=".json,application/json" />
-          <button id="syncLatestUpload" class="ghost advanced-inline">Load latest upload results</button>
           <p id="apiPublishStatus" class="note"></p>
         </article>
         <article class="settings-card wide meta-queue-panel">
           <div class="meta-queue-head">
             <div>
-              <p class="eyebrow">Meta Queue</p>
-              <h4>What is ready for Instagram and Facebook</h4>
+              <p class="eyebrow">Publishing Pipeline</p>
+              <h4>Scheduled plan and platform status</h4>
             </div>
             <span id="metaQueueSummaryLabel">No queue loaded</span>
           </div>
@@ -708,6 +945,93 @@
         <div id="publishingQueueList" class="publish-list"></div>
       </section>
 
+      <section id="albumVideos" class="band view-section" data-view="albumVideos">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Album Videos</p>
+            <h3>One-time full album YouTube videos</h3>
+          </div>
+          <div class="button-row tight">
+            <button id="refreshAlbumVideos">Refresh albums</button>
+          </div>
+        </div>
+
+        <div class="setup-status">
+          <article>
+            <strong id="albumVideoAlbumCount">0</strong>
+            <span>albums found</span>
+          </article>
+          <article>
+            <strong id="albumVideoTrackCount">0</strong>
+            <span>tracks in selected album</span>
+          </article>
+          <article>
+            <strong id="albumVideoReadyCount">0</strong>
+            <span>videos ready to upload</span>
+          </article>
+        </div>
+
+        <div class="posting-grid">
+          <article class="settings-card wide">
+            <h4>1. Choose Album</h4>
+            <p class="note">This is separate from daily scheduling. It renders one full-length YouTube video for every track, then automatically creates one combined full-album video with chapters.</p>
+            <div class="inline-controls">
+              <label>
+                Album
+                <select id="albumVideoAlbumSelect"></select>
+              </label>
+              <label>
+                Render quality
+                <select id="albumVideoRenderPreset">
+                  <option value="balanced">Balanced</option>
+                  <option value="fast">Fast test</option>
+                  <option value="high">High quality</option>
+                </select>
+              </label>
+              <label>
+                Upload privacy
+                <select id="albumVideoPrivacy">
+                  <option value="private">Private</option>
+                  <option value="unlisted">Unlisted</option>
+                  <option value="public">Public</option>
+                </select>
+              </label>
+            </div>
+            <div id="albumVideoAlbumStatusList" class="album-status-list"></div>
+            <div id="albumVideoTrackPreview" class="album-track-preview"></div>
+          </article>
+
+          <article class="settings-card wide">
+            <h4>2. Render Full-Length Videos</h4>
+            <div class="render-progress">
+              <div id="albumVideoProgressBar"></div>
+            </div>
+            <p id="albumVideoProgressLabel" class="note">Choose an album, then render the full-track videos and combined album video.</p>
+            <div class="button-row tight">
+              <button id="renderAlbumVideoTest" class="secondary">Create test video</button>
+              <button id="renderSelectedAlbumVideos">Start render</button>
+              <button id="stopAlbumVideoRender" class="ghost" disabled>Stop render</button>
+              <button id="uploadAlbumVideos">Upload approved videos</button>
+            </div>
+            <p id="albumVideoStatus" class="note"></p>
+          </article>
+
+          <article class="settings-card wide">
+            <h4>3. Review And Upload</h4>
+            <p class="note">Approve the individual tracks and the full-album compilation you want uploaded. Rejected videos stay local and will not upload.</p>
+            <div class="button-row tight">
+              <button id="approveAllAlbumVideos" class="secondary">Approve all</button>
+              <button id="rejectAllAlbumVideos" class="ghost">Reject all</button>
+              <button id="compileFullAlbumVideo" class="secondary">Create full album video</button>
+              <button id="clearAlbumVideos" class="ghost">Clear list</button>
+              <button id="cleanupPartialAlbumVideos" class="ghost">Clean incomplete renders</button>
+            </div>
+            <div id="albumVideoList" class="album-video-list"></div>
+            <div id="albumPlaylistCopyPanel" class="album-playlist-copy"></div>
+          </article>
+        </div>
+      </section>
+
       <section id="postingPlan" class="band view-section" data-view="postingPlan">
         <div class="section-head">
           <div>
@@ -724,16 +1048,78 @@
           <div class="section-head compact">
             <div>
               <p class="eyebrow">Published History</p>
-              <h4>Reels already posted by this scheduler</h4>
+              <h4>Reels already posted by ReleasePilot</h4>
             </div>
             <div class="button-row tight">
               <button id="refreshPublishingHistory" class="secondary">Refresh history</button>
               <button id="refreshMetaHistory" class="secondary">Check Meta posts</button>
+              <button id="clearPublishingHistory" class="ghost">Clear local history</button>
             </div>
           </div>
-          <p id="metaHistoryStatus" class="note">Local history loads automatically. Meta history checks the live Instagram and Facebook accounts.</p>
+          <p id="metaHistoryStatus" class="note">Local history includes Instagram, Facebook, YouTube Shorts, and YouTube full videos. Meta history checks live Instagram and Facebook posts.</p>
           <div id="publishingHistoryList" class="timeline-wheel"></div>
         </article>
+      </section>
+
+      <section id="helpStatus" class="band help-status view-section" data-view="helpStatus">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Help</p>
+            <h3>App status and next fix</h3>
+          </div>
+          <button id="refreshHelpStatus" class="secondary">Refresh status</button>
+        </div>
+        <article class="help-status-hero">
+          <div>
+            <span id="helpOverallBadge">Checking</span>
+            <h4 id="helpOverallTitle">Checking the app...</h4>
+            <p id="helpOverallText">This page explains what is ready, what needs attention, and where to go next.</p>
+          </div>
+          <div class="button-row tight">
+            <a href="#settingsSetup">Open Setup</a>
+            <a href="#publishingQueue">Open Schedule</a>
+          </div>
+        </article>
+        <div id="helpStatusCards" class="help-status-grid"></div>
+        <div class="help-two-column">
+          <article class="settings-card wide">
+            <h4>Recommended next steps</h4>
+            <div id="helpNextSteps" class="help-action-list"></div>
+          </article>
+          <article class="settings-card wide error-report-panel">
+            <div class="panel-title-row">
+              <h4>Error report</h4>
+              <div class="button-row tight">
+                <button id="exportErrorReport">Export report</button>
+                <button id="clearErrorLog" class="ghost">Clear log</button>
+              </div>
+            </div>
+            <p class="note">Exports a safe diagnostics file with recent errors, status checks, and counts. It does not include tokens, app secrets, or R2 keys.</p>
+            <div id="errorReportList" class="error-report-list"></div>
+          </article>
+          <article class="settings-card wide storage-cleanup-panel">
+            <div class="panel-title-row">
+              <h4>Local storage cleanup</h4>
+              <div class="button-row tight">
+                <button id="previewLocalCleanup" class="secondary">Preview cleanup</button>
+                <button id="runLocalCleanup" class="ghost">Clean old files</button>
+              </div>
+            </div>
+            <p class="note">Finds old rendered batches, logs, and legacy manual packages. It keeps recent batches and protects files still referenced by the saved schedule.</p>
+            <p id="storageCleanupStatus" class="note">Run a preview before cleaning.</p>
+            <div id="storageCleanupList" class="cleanup-list"></div>
+          </article>
+          <article class="settings-card wide">
+            <h4>Troubleshooting</h4>
+            <div class="help-action-list">
+              <p><strong>Backend not running:</strong> close the app window and reopen using `ReleasePilot.exe`.</p>
+              <p><strong>Meta token expired:</strong> open Setup > Meta, run Check Meta health, then use the direct fix button for the failed token check.</p>
+              <p><strong>YouTube not ready:</strong> open YouTube setup and add Google OAuth values to the backend `.env` before upload testing.</p>
+              <p><strong>No Reels ready:</strong> Generate a batch, approve Reels in Review, then load them into Schedule.</p>
+              <p><strong>Uploaded but not posted:</strong> check Schedule. The saved plan may be waiting for the due time.</p>
+            </div>
+          </article>
+        </div>
       </section>
 
       <section id="instagramSetup" class="band view-section" data-view="instagramSetup">
@@ -783,6 +1169,51 @@
               <div id="metaNextActions" class="meta-action-list"></div>
             </section>
           </div>
+        </article>
+
+        <article class="settings-card wide meta-token-save">
+          <div class="settings-card-head">
+            <div>
+              <h4>Quick save Meta tokens</h4>
+              <p>Use the guided connection first. If Meta blocks it, paste fresh Meta values below and ReleasePilot will update the backend `.env` for you.</p>
+            </div>
+            <div class="button-row tight">
+              <button id="startMetaOAuth">Connect Meta</button>
+              <button id="saveMetaEnvFromApp" class="secondary">Save pasted values</button>
+            </div>
+          </div>
+          <p id="metaOAuthStatus" class="note">Connect Meta opens the official Meta approval screen, then saves the long-lived token and Page token locally.</p>
+          <div class="token-save-grid">
+            <label>
+              User access token
+              <textarea id="metaUserAccessTokenInput" rows="2" placeholder="Paste the long-lived user access token"></textarea>
+            </label>
+            <label>
+              Page access token
+              <textarea id="metaPageAccessTokenInput" rows="2" placeholder="Paste the Page access token from /me/accounts"></textarea>
+            </label>
+            <label>
+              Meta App ID
+              <input id="metaAppIdInput" type="text" placeholder="Optional if already saved" />
+            </label>
+            <label>
+              App secret
+              <input id="metaAppSecretInput" type="password" placeholder="Optional if already saved" />
+            </label>
+            <label>
+              Facebook Page ID
+              <input id="metaFacebookPageIdInput" type="text" placeholder="Optional if pasting /me/accounts JSON" />
+            </label>
+            <label>
+              Instagram User ID
+              <input id="metaIgUserIdInput" type="text" placeholder="Optional if pasting /me/accounts JSON" />
+            </label>
+            <label class="wide">
+              Paste `/me/accounts` response JSON
+              <textarea id="metaAccountsJsonInput" rows="5" placeholder="Optional: paste the JSON response from Graph API Explorer. The app can pull Page token, Page ID and IG ID automatically."></textarea>
+            </label>
+          </div>
+          <p id="metaEnvSaveStatus" class="note">Secrets are written only to the local backend `.env`, not browser storage.</p>
         </article>
 
         <div class="posting-grid">
@@ -876,48 +1307,184 @@
         </div>
       </section>
 
-      <section id="connectors" class="band view-section" data-view="connectors">
+      <section id="visualSources" class="band view-section" data-view="visualSources">
         <div class="section-head">
           <div>
-            <p class="eyebrow">Stores</p>
-            <h3>Data sources to connect later</h3>
+            <p class="eyebrow">Visual Sources</p>
+            <h3>Stock atmosphere video library</h3>
+          </div>
+          <div class="button-row tight">
+            <button id="checkPexelsReadiness" class="secondary">Check sources</button>
+            <button id="searchPexelsVideos">Search videos</button>
+            <button id="clearPexelsApproved" class="ghost">Clear approved clips</button>
           </div>
         </div>
-        <div class="connector-grid">
+
+        <div class="setup-status">
           <article>
-            <h4>Distributor export</h4>
-            <p>Best first source for all 500+ tracks because it can include ISRC, release metadata, artwork, and store availability.</p>
+            <strong id="pexelsReadyLabel">Not checked</strong>
+            <span>source keys</span>
           </article>
           <article>
-            <h4>Spotify</h4>
-            <p>Good for metadata, album art, previews, popularity, and release mapping. Full audio is not available from the normal public API.</p>
+            <strong id="pexelsLocalVideoCount">0</strong>
+            <span>approved local videos</span>
           </article>
           <article>
-            <h4>YouTube</h4>
-            <p>Useful for matching official videos or topic uploads. Audio extraction should be avoided unless you have a permitted source workflow.</p>
+            <strong id="pexelsSourceRecordCount">0</strong>
+            <span>source records</span>
           </article>
           <article>
-            <h4>SoundCloud</h4>
-            <p>Can work if your account/app has API access or export data. Availability depends on SoundCloud access permissions.</p>
+            <strong id="pexelsThemeCount">0</strong>
+            <span>album themes</span>
+          </article>
+        </div>
+
+        <div class="posting-grid">
+          <article class="settings-card">
+            <h4>Search stock videos</h4>
+            <label>
+              Theme search
+              <input id="pexelsSearchQuery" type="text" value="jazz coffee shop relaxing study" />
+            </label>
+            <label>
+              Source
+              <select id="stockVideoProvider">
+                <option value="all">All enabled sources</option>
+                <option value="pexels">Pexels only</option>
+                <option value="pixabay">Pixabay only</option>
+              </select>
+            </label>
+            <label>
+              Search breadth
+              <select id="stockSearchBreadth">
+                <option value="balanced" selected>Balanced variety</option>
+                <option value="focused">Focused exact terms</option>
+                <option value="wide">Wider discovery</option>
+              </select>
+            </label>
+            <label>
+              Orientation
+              <select id="pexelsOrientation">
+                <option value="portrait">Portrait</option>
+                <option value="landscape">Landscape</option>
+                <option value="square">Square</option>
+              </select>
+            </label>
+            <label>
+              Quality
+              <select id="pexelsSize">
+                <option value="medium">Full HD or better</option>
+                <option value="small">HD or better</option>
+                <option value="large">4K where available</option>
+              </select>
+            </label>
+            <p id="pexelsStatus" class="note">Stock source status appears here.</p>
+          </article>
+
+          <article class="settings-card wide">
+            <h4>Approved source folder</h4>
+            <p class="note">Downloaded clips are stored locally and logged with creator/source/license notes. Create Batch can auto-search enabled stock sources from the track title, album, style, and mood cues when it needs a better atmosphere match for Short 2 or Short 3.</p>
+            <p class="note">Optional album guidance lives in <code>visual-sources/album-visual-themes.csv</code>. Fill in mood, theme, scene, and search terms there to steer automatic searches per album.</p>
+            <div id="pexelsReadinessDetails" class="setup-result-grid"></div>
+          </article>
+
+          <article class="settings-card wide">
+            <div class="panel-title-row">
+              <h4>Search results</h4>
+              <span class="note">Download only clips that fit your brand and are safe for commercial reuse under the provider terms.</span>
+            </div>
+            <div id="pexelsResults" class="visual-result-grid"></div>
           </article>
         </div>
       </section>
-    </main>
 
-    <template id="queueTemplate">
-      <article class="queue-item">
-        <div class="art"></div>
-        <div>
-          <div class="meta-row">
-            <span class="type"></span>
-            <span class="date"></span>
+      <section id="youtubeSetup" class="band view-section" data-view="youtubeSetup">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">YouTube Setup</p>
+            <h3>Google OAuth and upload readiness</h3>
           </div>
-          <h4></h4>
-          <p></p>
-          <small></small>
+          <div class="button-row tight">
+            <button id="saveYouTubeSetup">Save setup</button>
+            <button id="youtubeHealthCheck" class="secondary">Check YouTube readiness</button>
+          </div>
         </div>
-      </article>
-    </template>
+
+        <div class="setup-status">
+          <article>
+            <strong id="youtubeReadyCount">0/0</strong>
+            <span>readiness checks complete</span>
+          </article>
+          <article>
+            <strong id="youtubeModeLabel">Private</strong>
+            <span>default upload privacy</span>
+          </article>
+          <article>
+            <strong id="youtubeCredentialLabel">Not checked</strong>
+            <span>Google OAuth status</span>
+          </article>
+        </div>
+
+        <div class="posting-grid">
+          <article class="settings-card">
+            <h4>Channel</h4>
+            <label>
+              Channel label
+              <input id="youtubeChannelLabel" type="text" placeholder="Maja's Coffee Jazz Zone" />
+            </label>
+            <label>
+              Channel ID
+              <input id="youtubeChannelId" type="text" placeholder="Optional channel ID" />
+            </label>
+          </article>
+
+          <article class="settings-card">
+            <h4>Upload Defaults</h4>
+            <label>
+              Default privacy
+              <select id="youtubeDefaultPrivacy">
+                <option value="private">Private</option>
+                <option value="unlisted">Unlisted</option>
+                <option value="public">Public</option>
+              </select>
+            </label>
+            <label class="check"><input id="youtubeMadeForKids" type="checkbox" /> Made for kids</label>
+            <label class="check"><input id="youtubeUploadShorts" type="checkbox" checked /> Upload Shorts</label>
+            <label class="check"><input id="youtubeBackendRequired" type="checkbox" checked /> Backend stores OAuth securely</label>
+          </article>
+
+          <article class="settings-card wide">
+            <h4>Reconnect Google OAuth</h4>
+            <p class="note">Use this when YouTube says the token has expired or been revoked. If the wrong browser opens, copy the generated link and paste it into Chrome.</p>
+            <div class="button-row tight">
+              <button id="startYouTubeOAuth">Start Google OAuth</button>
+              <button id="copyYouTubeOAuthLink" class="secondary">Copy OAuth link</button>
+            </div>
+            <div id="youtubeOAuthFallback" class="oauth-fallback" hidden>
+              <a id="youtubeOAuthLink" href="#" target="_blank" rel="noreferrer">Open Google OAuth link</a>
+            </div>
+            <p id="youtubeSetupStatus" class="note"></p>
+          </article>
+
+          <article class="settings-card wide">
+            <h4>Readiness Details</h4>
+            <div id="youtubeHealthStats" class="setup-result-grid"></div>
+            <div id="youtubeHealthDetails" class="table-wrap"></div>
+          </article>
+
+          <article class="settings-card wide">
+            <h4>Upload Test</h4>
+            <p class="note">This uses one local rendered Reel to confirm YouTube upload access before the daily schedule uses it.</p>
+            <label>
+              Test source
+              <select id="youtubeShortSource"></select>
+            </label>
+            <button id="youtubeUploadTest" class="secondary">Upload test Short</button>
+          </article>
+        </div>
+      </section>
+
+    </main>
 
     <template id="reviewTemplate">
       <article class="review-card">
@@ -959,18 +1526,17 @@
           <p class="review-album"></p>
           <div class="publish-fields">
             <label>
-              Platform
-              <select class="publish-platform-input">
-                <option value="instagram-reel">Instagram Reel</option>
-                <option value="instagram-story">Instagram Story</option>
-                <option value="instagram-feed">Instagram Feed</option>
-              </select>
-            </label>
-            <label>
               Scheduled
               <input class="publish-scheduled" type="datetime-local" />
             </label>
           </div>
+          <fieldset class="destination-grid">
+            <legend>Publish to</legend>
+            <label class="check"><input class="destination-input" data-destination="instagram" type="checkbox" checked /> Instagram</label>
+            <label class="check"><input class="destination-input" data-destination="facebook" type="checkbox" checked /> Facebook</label>
+            <label class="check"><input class="destination-input" data-destination="youtubeShorts" type="checkbox" checked /> YouTube Shorts</label>
+            <label class="check"><input class="destination-input" data-destination="youtubeVideo" type="checkbox" checked /> YouTube</label>
+          </fieldset>
           <label>
             Caption
             <textarea class="publish-caption" rows="3"></textarea>
@@ -991,6 +1557,6 @@
       </article>
     </template>
 
-    <script src="./app.js?v=20260618-pro1"></script>
+    <script src="./app.js?v=20260807-schedule-preview"></script>
   </body>
 </html>

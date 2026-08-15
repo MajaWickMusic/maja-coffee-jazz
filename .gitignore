@@ -8,12 +8,21 @@ outputs/jazz-content-scheduler/backend/config/*.json
 
 # Generated media and render outputs
 outputs/jazz-content-scheduler/rendered-reels/
+outputs/jazz-content-scheduler/rendered-youtube-videos/
 outputs/jazz-content-scheduler/manual-posting-packages/
 outputs/jazz-content-scheduler/manual-posting-test/
 outputs/jazz-content-scheduler/api-runs/
 outputs/jazz-content-scheduler/instagram-container-runs/
 outputs/jazz-content-scheduler/queue-runs/
+outputs/jazz-content-scheduler/visual-sources/approved-videos/
+outputs/jazz-content-scheduler/generated-albums/
+outputs/jazz-content-scheduler/reports/
+outputs/github-release/
+outputs/releasepilot-exe/
+ReleasePilot.exe
 outputs/jazz-content-scheduler/render-history.csv
+outputs/jazz-content-scheduler/youtube-video-render-history.csv
+outputs/jazz-content-scheduler/rejection-feedback.csv
 outputs/jazz-content-scheduler/*.mp4
 outputs/jazz-content-scheduler/*.mov
 outputs/jazz-content-scheduler/*.mkv
@@ -25,6 +34,9 @@ outputs/jazz-content-scheduler/*full-catalog*.csv
 outputs/jazz-content-scheduler/*with-files*.csv
 outputs/jazz-content-scheduler/*local-artwork-map*.csv
 outputs/jazz-content-scheduler/*missing*.csv
+outputs/jazz-content-scheduler/albums-needing-manual-artwork.csv
+outputs/jazz-content-scheduler/backend/config/*.bak*
+outputs/jazz-content-scheduler/profiles/
 
 # Dependencies and caches
 node_modules/

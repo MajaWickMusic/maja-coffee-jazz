@@ -1,3 +1,7 @@
+param(
+  [switch]$PassThru
+)
+
 $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -16,11 +20,14 @@ $browser = $browserCandidates | Where-Object { $_ -and (Test-Path $_) } | Select
 if ($browser) {
   $profileDir = Join-Path $env:LOCALAPPDATA "MajaCoffeeJazzScheduler\BrowserProfile"
   New-Item -ItemType Directory -Force -Path $profileDir | Out-Null
-  Start-Process -FilePath $browser -ArgumentList @(
+  $process = Start-Process -FilePath $browser -ArgumentList @(
     "--app=$dashboardUrl",
     "--disable-cache",
     "--user-data-dir=$profileDir"
-  )
+  ) -PassThru
+  if ($PassThru) {
+    Write-Output $process.Id
+  }
 } else {
   Write-Host "Could not find Edge or Chrome automatically."
   Write-Host "Open this URL manually in your browser:"

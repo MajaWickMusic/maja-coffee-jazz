@@ -1,6 +1,6 @@
-# Jazz Scheduler Backend
+# ReleasePilot Backend
 
-This is the local backend shell for Meta/Instagram readiness checks and guarded Reel container preparation.
+This is the local backend shell for ReleasePilot readiness checks, media rendering support, uploads, and guarded publishing.
 
 ## Setup
 

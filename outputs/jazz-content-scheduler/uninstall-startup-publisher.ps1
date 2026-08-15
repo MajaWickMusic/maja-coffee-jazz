@@ -9,7 +9,12 @@ if ($task) {
   Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false
   Write-Output "Removed startup publisher task: $TaskName"
 } else {
-  Write-Output "Startup publisher task was not installed: $TaskName"
+  $schtasksOutput = & schtasks.exe /Delete /TN $TaskName /F 2>&1
+  if ($LASTEXITCODE -eq 0) {
+    Write-Output "Removed startup publisher task with schtasks.exe: $TaskName"
+  } else {
+    Write-Output "Startup publisher task was not installed: $TaskName"
+  }
 }
 
 $startupFolder = [Environment]::GetFolderPath("Startup")

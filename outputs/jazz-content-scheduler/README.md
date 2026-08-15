@@ -1,6 +1,6 @@
-# Jazz Content Scheduler Prototype
+# ReleasePilot App
 
-This is a dependency-free starter dashboard for planning Instagram Reels, Stories, and image/text posts from a large music catalog.
+ReleasePilot is a local dashboard for artists to create, review, schedule, publish, and improve music-led social content from their own catalogue.
 
 ## What works now
 

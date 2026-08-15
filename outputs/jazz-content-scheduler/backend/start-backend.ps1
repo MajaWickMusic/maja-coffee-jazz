@@ -1,8 +1,13 @@
+param(
+  [int]$ParentPid = 0
+)
+
 $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 $nodeCandidates = @(
+  $env:RELEASEPILOT_NODE,
   $env:JAZZ_SCHEDULER_NODE,
   "node",
   (Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe")
@@ -18,12 +23,16 @@ foreach ($candidate in $nodeCandidates) {
 }
 
 if (-not $node) {
-  throw "Node.js was not found. Install Node.js from https://nodejs.org, then reopen Jazz Scheduler."
+  throw "Node.js was not found. Install Node.js from https://nodejs.org, then reopen ReleasePilot."
 }
 
 Push-Location $scriptDir
 try {
-  & $node ".\server.mjs"
+  $args = @(".\server.mjs")
+  if ($ParentPid -gt 0) {
+    $args += @("--parent-pid", $ParentPid)
+  }
+  & $node @args
 } finally {
   Pop-Location
 }

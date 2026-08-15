@@ -83,7 +83,7 @@ function Get-PublishSummary {
 
     if ($published -gt 0) {
       return @{
-        Title = "Jazz Reel posted"
+        Title = "Jazz content posted"
         Message = $message
         Icon = "Info"
       }
@@ -132,7 +132,7 @@ $logPath = Join-Path $LogDir "startup-publisher-$stamp.log"
 "[$(Get-Date -Format o)] Starting one-shot publisher..." | Tee-Object -FilePath $logPath
 Show-PublisherNotification `
   -Title "Jazz publisher starting" `
-  -Message "Checking today's scheduled Reels now." `
+  -Message "Checking today's approved Meta, Instagram, Shorts, and YouTube videos now." `
   -Icon "Info"
 
 $output = & $NodePath $BackendPath --publish-due-once 2>&1

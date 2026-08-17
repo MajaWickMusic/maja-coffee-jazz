@@ -7708,14 +7708,17 @@ function getNextPublishItem(items = state.publishingQueue) {
     .sort((a, b) => new Date(a.scheduledFor || 0).getTime() - new Date(b.scheduledFor || 0).getTime())[0] || null;
 }
 
+function isDueNow(item, now = Date.now()) {
+  if (!(item?.containerId || item?.publicVideoUrl)) return false;
+  if (item.status === "posted" || item.status === "held" || item.publishStatus === "published") return false;
+  const scheduled = new Date(item.scheduledFor || 0).getTime();
+  const nowTime = now instanceof Date ? now.getTime() : Number(now);
+  return Boolean(scheduled && scheduled <= nowTime);
+}
+
 function getDuePublishItems(items = state.publishingQueue) {
   const now = Date.now();
-  return items.filter((item) => {
-    if (!(item.containerId || item.publicVideoUrl)) return false;
-    if (item.status === "posted" || item.status === "held" || item.publishStatus === "published") return false;
-    const scheduled = new Date(item.scheduledFor || 0).getTime();
-    return scheduled && scheduled <= now;
-  });
+  return items.filter((item) => isDueNow(item, now));
 }
 
 function mergePublishingResults(items) {

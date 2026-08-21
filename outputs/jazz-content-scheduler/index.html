@@ -817,6 +817,22 @@
               <input id="songFactoryArtworkUpload" type="file" accept="image/png,image/jpeg,image/webp" />
               <span class="field-hint">PNG, JPG, or WebP uploads are saved into the album folder as a 3000x3000 JPEG and written into the catalogue artwork field.</span>
             </label>
+            <div class="artwork-convert-tool">
+              <label>
+                Artwork to convert
+                <input id="songFactoryArtworkConvertUpload" type="file" accept="image/png,image/jpeg,image/webp" />
+                <span class="field-hint">Use this when you need a standalone 3000x3000 JPG copy for Ditto or a release folder.</span>
+              </label>
+              <label>
+                Converted artwork output folder
+                <input id="songFactoryArtworkOutputFolder" type="text" placeholder="Choose where the 3000x3000 JPG should be saved" />
+              </label>
+              <div class="button-row">
+                <button id="pickSongFactoryArtworkOutputFolder" class="secondary">Pick artwork output folder</button>
+                <button id="pasteSongFactoryArtworkOutputFolder" class="ghost">Paste folder path</button>
+                <button id="convertSongFactoryArtwork" class="secondary">Convert artwork to JPG</button>
+              </div>
+            </div>
             <div class="button-row">
               <button id="saveSongFactoryCompletedAlbum" class="secondary">Save as completed album</button>
               <button id="openSongFactoryAlbumFolder" class="ghost">Open saved folder</button>

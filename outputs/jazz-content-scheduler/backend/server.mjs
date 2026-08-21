@@ -378,6 +378,11 @@ const server = createServer(async (request, response) => {
       return json(response, 200, await saveSongFactoryCompletedAlbum(payload));
     }
 
+    if (request.method === "POST" && url.pathname === "/api/song-factory/convert-artwork") {
+      const payload = await readJsonBody(request);
+      return json(response, 200, await convertSongFactoryArtworkUtility(payload));
+    }
+
     if (request.method === "POST" && url.pathname === "/api/song-factory/rename-audio-files") {
       const payload = await readJsonBody(request);
       return json(response, 200, await renameSongFactoryAudioFiles(payload));
@@ -4232,6 +4237,38 @@ async function convertSongFactoryArtworkToJpeg({ albumDir, albumTitle, upload, s
   } finally {
     await rm(tempInputPath, { force: true }).catch(() => {});
   }
+}
+
+async function convertSongFactoryArtworkUtility(payload = {}) {
+  const outputFolder = normalizeLocalFolderInput(payload.outputFolder || payload.folder || payload.outputDir || "");
+  const albumTitle = String(payload.albumTitle || payload.title || "Converted Artwork").trim() || "Converted Artwork";
+  const artworkUpload = decodeArtworkUpload(payload.artworkUpload || payload.upload || {}, `${safeFileSlug(albumTitle)}-artwork`);
+  const sourcePath = normalizeLocalFolderInput(payload.sourcePath || payload.artworkPath || "");
+
+  if (!outputFolder) {
+    return { ok: false, message: "Choose an output folder for the converted artwork first." };
+  }
+  await mkdir(outputFolder, { recursive: true });
+  if (!artworkUpload && (!sourcePath || !existsSync(sourcePath))) {
+    return { ok: false, message: "Choose an artwork image to convert first." };
+  }
+
+  const artworkPath = await convertSongFactoryArtworkToJpeg({
+    albumDir: outputFolder,
+    albumTitle,
+    upload: artworkUpload,
+    sourcePath
+  });
+
+  return {
+    ok: Boolean(artworkPath),
+    message: artworkPath
+      ? `Converted artwork to 3000x3000 JPG: ${artworkPath}`
+      : "Artwork conversion did not create a file.",
+    artworkPath,
+    outputFolder,
+    format: "JPEG 3000x3000"
+  };
 }
 
 async function saveSongFactoryCompletedAlbum(payload = {}) {

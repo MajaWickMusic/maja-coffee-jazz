@@ -944,6 +944,11 @@ function defaultSongFactoryAudioFolder() {
   return DEFAULT_SONG_FACTORY_AUDIO_FOLDERS[state.activeProfileId] || state.setupWizard?.audioRoot || "";
 }
 
+function defaultSongFactoryArtworkOutputFolder() {
+  const audioFolder = $("#songFactoryAudioFolder")?.value.trim() || defaultSongFactoryAudioFolder();
+  return audioFolder ? `${audioFolder}\\Ditto Ready` : state.songFactorySavedAlbum?.albumDir || "";
+}
+
 function stableHash(value) {
   const text = String(value || "");
   let hash = 2166136261;
@@ -6180,6 +6185,10 @@ function renderSongFactory() {
   if (audioFolderInput && !audioFolderInput.value.trim()) {
     audioFolderInput.value = defaultSongFactoryAudioFolder();
   }
+  const artworkOutputInput = $("#songFactoryArtworkOutputFolder");
+  if (artworkOutputInput && !artworkOutputInput.value.trim()) {
+    artworkOutputInput.value = defaultSongFactoryArtworkOutputFolder();
+  }
 
   const plan = state.songFactoryPlan;
   const title = $("#songFactoryPlanTitle");
@@ -6408,8 +6417,8 @@ function songFactoryPromptsText(plan) {
   ].join("\n\n");
 }
 
-async function songFactoryArtworkUploadPayload() {
-  const input = $("#songFactoryArtworkUpload");
+async function songFactoryArtworkUploadPayload(selector = "#songFactoryArtworkUpload") {
+  const input = $(selector);
   const file = input?.files?.[0];
   if (!file) return null;
   const dataUrl = await new Promise((resolve, reject) => {
@@ -6460,6 +6469,8 @@ async function pickSongFactoryAudioFolder() {
     const folder = result.path || result.folder || "";
     if (folder) {
       if (input) input.value = folder;
+      const artworkOutput = $("#songFactoryArtworkOutputFolder");
+      if (artworkOutput && !artworkOutput.value.trim()) artworkOutput.value = defaultSongFactoryArtworkOutputFolder();
       setStatus("#songFactoryStatus", "Downloaded audio folder selected.");
     } else {
       setStatus("#songFactoryStatus", "No folder was selected. You can also paste a folder path directly into the box.");
@@ -6484,7 +6495,80 @@ async function pasteSongFactoryAudioFolder() {
     return;
   }
   input.value = value;
+  const artworkOutput = $("#songFactoryArtworkOutputFolder");
+  if (artworkOutput && !artworkOutput.value.trim()) artworkOutput.value = defaultSongFactoryArtworkOutputFolder();
   setStatus("#songFactoryStatus", "Downloaded audio folder path added.");
+}
+
+async function pickSongFactoryArtworkOutputFolder() {
+  const input = $("#songFactoryArtworkOutputFolder");
+  try {
+    const result = await postBackend("/api/setup/pick-folder", {
+      title: "Choose where the converted artwork JPG should be saved",
+      initialPath: input?.value.trim() || defaultSongFactoryArtworkOutputFolder()
+    });
+    const folder = result.path || result.folder || "";
+    if (folder) {
+      if (input) input.value = folder;
+      setStatus("#songFactoryStatus", "Artwork output folder selected.");
+    } else {
+      setStatus("#songFactoryStatus", "No artwork output folder was selected.");
+    }
+  } catch (error) {
+    setStatus("#songFactoryStatus", `Could not choose artwork output folder: ${error.message}`);
+  }
+}
+
+async function pasteSongFactoryArtworkOutputFolder() {
+  const input = $("#songFactoryArtworkOutputFolder");
+  if (!input) return;
+  let value = "";
+  try {
+    value = await navigator.clipboard.readText();
+  } catch {
+    value = prompt("Paste the output folder path or file:/// folder link here") || "";
+  }
+  value = normalizeSetupFolderInput(value || defaultSongFactoryArtworkOutputFolder());
+  if (!value) {
+    setStatus("#songFactoryStatus", "No artwork output folder path was pasted.");
+    return;
+  }
+  input.value = value;
+  setStatus("#songFactoryStatus", "Artwork output folder path added.");
+}
+
+async function convertSongFactoryArtworkOnly() {
+  const artworkUpload = await songFactoryArtworkUploadPayload("#songFactoryArtworkConvertUpload");
+  if (!artworkUpload) {
+    setStatus("#songFactoryStatus", "Choose the artwork image you want to convert first.");
+    return;
+  }
+  const outputFolder = $("#songFactoryArtworkOutputFolder")?.value.trim() || defaultSongFactoryArtworkOutputFolder();
+  if (!outputFolder) {
+    setStatus("#songFactoryStatus", "Choose where the converted artwork JPG should be saved first.");
+    return;
+  }
+  const albumTitle = state.songFactoryPlan?.settings?.albumTitle
+    || state.songFactorySavedAlbum?.albumTitle
+    || artworkUpload.name?.replace(/\.[a-z0-9]+$/i, "")
+    || "Converted Artwork";
+  try {
+    setStatus("#songFactoryStatus", "Converting artwork to 3000x3000 JPG...");
+    const result = await postBackend("/api/song-factory/convert-artwork", {
+      profileId: state.activeProfileId,
+      albumTitle,
+      outputFolder,
+      artworkUpload
+    });
+    if (result.ok === false) {
+      throw new Error(result.message || "Artwork conversion was not completed.");
+    }
+    const output = $("#songFactoryArtworkOutputFolder");
+    if (output && result.outputFolder) output.value = result.outputFolder;
+    setStatus("#songFactoryStatus", result.message || `Converted artwork: ${result.artworkPath}`);
+  } catch (error) {
+    setStatus("#songFactoryStatus", `Could not convert artwork: ${error.message}`);
+  }
 }
 
 function openSongFactorySunoUrl() {
@@ -8281,6 +8365,9 @@ on("#exportSongFactoryJson", "click", exportSongFactoryJson);
 on("#recallSongFactoryPlan", "click", recallSongFactoryPlan);
 on("#saveSongFactoryCompletedAlbum", "click", saveSongFactoryCompletedAlbum);
 on("#openSongFactoryAlbumFolder", "click", openSongFactoryAlbumFolder);
+on("#pickSongFactoryArtworkOutputFolder", "click", pickSongFactoryArtworkOutputFolder);
+on("#pasteSongFactoryArtworkOutputFolder", "click", pasteSongFactoryArtworkOutputFolder);
+on("#convertSongFactoryArtwork", "click", convertSongFactoryArtworkOnly);
 on("#openSongFactorySunoUrl", "click", openSongFactorySunoUrl);
 on("#openSongFactoryDownloader", "click", openSongFactoryDownloader);
 on("#copySongFactorySunoUrl", "click", copySongFactorySunoUrl);

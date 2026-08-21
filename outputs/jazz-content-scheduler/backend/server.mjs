@@ -4579,10 +4579,9 @@ async function prepareSongFactoryAudio(payload = {}, onProgress = null) {
   const mirrorFolder = payload.mirrorToSourceFolder === false
     ? ""
     : normalizeLocalFolderInput(payload.mirrorFolder || join(sourceFolder || outputFolder || "", "Ditto Ready"));
-  let artworkPath = normalizeLocalFolderInput(payload.artworkPath || "");
-  if (!artworkPath || !existsSync(artworkPath)) {
-    artworkPath = await findSongFactoryAlbumArtworkFromCatalog({ paths, albumTitle });
-  }
+  const payloadArtworkPath = normalizeLocalFolderInput(payload.artworkPath || "");
+  const catalogArtworkPath = await findSongFactoryAlbumArtworkFromCatalog({ paths, albumTitle });
+  const artworkPath = catalogArtworkPath || (payloadArtworkPath && existsSync(payloadArtworkPath) ? payloadArtworkPath : "");
   const hasArtwork = Boolean(artworkPath && existsSync(artworkPath));
   if (!albumTitle || !tracks.length) {
     return { ok: false, message: "Generate or recall a Song Factory album plan before converting audio." };
